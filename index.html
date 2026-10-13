@@ -1,0 +1,2452 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Hourglass Keep</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Atkinson+Hyperlegible:wght@400;700&family=Caveat:wght@500;700&family=JetBrains+Mono:wght@500;700&family=Silkscreen:wght@400;700&display=swap">
+<style>
+/* Layout: chapter strip, then three seat panels side by side (Past | Present | Future) that stack on narrow screens.
+   One committed dungeon look: dark stone, blocky edges, each seat owns one hue. */
+:root{
+  color-scheme: dark;
+  --bg:#16141c;
+  --grid:#1c1a24;
+  --panel:#211e2a;
+  --panel-2:#2a2635;
+  --line:#3b3648;
+  --shadow:#0c0b10;
+  --text:#efe8da;
+  --muted:#a8a1b4;
+  --past:#8dbacd;
+  --present:#f2c14e;
+  --future:#bb98f2;
+  --danger:#e66a52;
+  --good:#79c988;
+  --paper:#ebe4d3;
+  --ink:#2b2520;
+  --display:'Silkscreen', 'Courier New', monospace;
+  --body:'Atkinson Hyperlegible', system-ui, -apple-system, 'Segoe UI', sans-serif;
+  --mono:'JetBrains Mono', ui-monospace, Menlo, Consolas, monospace;
+  --hand:'Caveat', 'Segoe Print', 'Bradley Hand', cursive;
+  --cine-blue:#3a74ff;
+  --cine-glow:rgba(58,116,255,.45);
+  --cine-black:#000000;
+}
+*{box-sizing:border-box}
+[hidden]{display:none!important}
+body{margin:0}
+body{
+  background-color:var(--bg);
+  background-image:
+    linear-gradient(var(--grid) 2px, transparent 2px),
+    linear-gradient(90deg, var(--grid) 2px, transparent 2px);
+  background-size:56px 56px;
+  color:var(--text);
+  font-family:var(--body);
+  font-size:15px;
+  line-height:1.5;
+}
+.app{max-width:1420px;margin:0 auto;padding-block:22px 48px;padding-inline:16px;display:flex;flex-direction:column;gap:16px}
+.top{display:flex;flex-wrap:wrap;gap:14px 24px;align-items:flex-end;justify-content:space-between}
+h1{font-family:var(--display);font-weight:700;font-size:clamp(28px,4.4vw,44px);letter-spacing:.02em;margin:0;line-height:1;text-wrap:balance}
+h1 .glass{color:var(--present)}
+.tag{margin:8px 0 0;color:var(--muted);max-width:60ch}
+.top-actions{display:flex;flex-wrap:wrap;gap:8px;align-items:center}
+button{font:inherit;color:inherit}
+.btn{
+  font-family:var(--display);font-size:13px;letter-spacing:.04em;
+  background:var(--panel-2);color:var(--text);
+  border:2px solid var(--line);padding:8px 12px;cursor:pointer;
+  box-shadow:0 3px 0 var(--shadow);
+}
+.btn:hover{border-color:var(--muted)}
+.btn:active{transform:translateY(2px);box-shadow:0 1px 0 var(--shadow)}
+.btn[disabled]{opacity:.45;cursor:not-allowed;transform:none}
+.btn.primary{background:var(--present);color:#21180a;border-color:var(--present)}
+.btn.violet{border-color:var(--future);color:var(--future)}
+.btn.warn{border-color:var(--danger);color:var(--danger)}
+:focus-visible{outline:2px solid var(--present);outline-offset:2px}
+.seg{display:inline-flex;flex-wrap:wrap;border:2px solid var(--line);background:var(--panel);box-shadow:0 3px 0 var(--shadow)}
+.seg button{font-family:var(--display);font-size:12px;letter-spacing:.04em;background:transparent;border:0;padding:8px 10px;cursor:pointer;color:var(--muted)}
+.seg button[aria-pressed="true"]{background:var(--panel-2);color:var(--text)}
+.seg button[data-seat="past"][aria-pressed="true"]{color:var(--past)}
+.seg button[data-seat="present"][aria-pressed="true"]{color:var(--present)}
+.seg button[data-seat="future"][aria-pressed="true"]{color:var(--future)}
+
+.levels{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,240px),1fr));gap:10px}
+.chap{background:var(--panel);border:2px solid var(--line);padding:10px 12px;box-shadow:0 4px 0 var(--shadow);display:grid;grid-template-columns:auto minmax(0,1fr);gap:6px 10px;align-items:start}
+.chap.on{border-color:var(--present);background:var(--panel-2)}
+.chap .sw{width:28px;height:28px;display:flex;align-items:center;justify-content:center;font-family:var(--display);font-size:13px;color:#16141c;box-shadow:inset -4px -4px 0 rgba(0,0,0,.25)}
+.chap .nm{font-family:var(--display);font-size:14px;line-height:1.2;padding-top:5px}
+.chap .tags{grid-column:1 / -1;display:flex;flex-wrap:wrap;gap:4px}
+.chap .tags span{font-family:var(--mono);font-size:11px;border:1px solid var(--line);padding:0 5px;color:var(--muted)}
+.pips{grid-column:1 / -1;display:flex;gap:6px;flex-wrap:wrap}
+.pip{font-family:var(--display);font-size:11px;letter-spacing:.03em;background:var(--bg);color:var(--muted);border:2px solid var(--line);padding:5px 8px;cursor:pointer;display:inline-flex;gap:6px;align-items:center;min-width:0}
+.pip:hover{border-color:var(--muted);color:var(--text)}
+.pip[aria-pressed="true"]{border-color:var(--present);color:var(--present)}
+.pip.armed{border-color:var(--danger);color:var(--danger)}
+.pip[disabled]{cursor:not-allowed;opacity:.55}
+.pip .ok{color:var(--good)}
+
+.brief{display:grid;grid-template-columns:minmax(0,auto) minmax(0,1fr);gap:6px 18px;align-items:start;background:var(--panel);border:2px solid var(--line);border-left:6px solid var(--present);padding:12px 16px}
+.brief h2{font-family:var(--display);font-size:18px;margin:0;line-height:1.2}
+.brief .scene{font-size:13.5px;color:var(--muted);margin:2px 0 0;max-width:34ch}
+.brief ul{margin:0;padding-left:18px;display:flex;flex-direction:column;gap:4px;font-size:14.5px;max-width:78ch}
+.brief li::marker{color:var(--present)}
+@media (max-width:760px){ .brief{grid-template-columns:minmax(0,1fr)} }
+
+.modebar{display:flex;flex-wrap:wrap;gap:6px 14px;align-items:center;font-size:14px;color:var(--muted);border-left:4px solid var(--present);padding:6px 12px;background:var(--panel)}
+.modebar b{color:var(--text)}
+.chip{font-family:var(--mono);font-size:12px;padding:2px 8px;border:2px solid var(--line);background:var(--panel-2);color:var(--text);white-space:nowrap}
+.chip.on-past{border-color:var(--past);color:var(--past)}
+.chip.on-present{border-color:var(--present);color:var(--present)}
+.chip.on-future{border-color:var(--future);color:var(--future)}
+.chip.off{opacity:.5}
+
+.online{background:var(--panel);border:2px solid var(--line);box-shadow:0 6px 0 var(--shadow);padding:14px 16px;display:flex;flex-direction:column;gap:12px}
+.online h2{font-family:var(--display);font-size:16px;margin:0}
+.online p{margin:0;max-width:70ch}
+.row{display:flex;flex-wrap:wrap;gap:10px;align-items:center}
+.seat-pick{display:flex;flex-wrap:wrap;gap:8px;border:0;padding:0;margin:0}
+.seat-pick legend{font-size:13px;color:var(--muted);margin-bottom:6px;padding:0}
+.seat-pick label{display:inline-flex;gap:6px;align-items:center;border:2px solid var(--line);padding:6px 10px;cursor:pointer;font-family:var(--display);font-size:12px}
+.seat-pick input{accent-color:var(--present)}
+.code-input{font-family:var(--mono);font-size:16px;letter-spacing:.2em;text-transform:uppercase;width:7.5em;background:var(--bg);color:var(--text);border:2px solid var(--line);padding:7px 10px}
+.err{color:var(--danger);font-size:14px;min-height:1.2em;margin:0}
+.note{font-size:14px;color:var(--muted)}
+.note code{font-family:var(--mono);font-size:12.5px;color:var(--text)}
+
+.banner{display:flex;flex-wrap:wrap;gap:10px 16px;align-items:center;justify-content:space-between;padding:12px 16px;border:2px solid var(--line);background:var(--panel-2);box-shadow:0 6px 0 var(--shadow)}
+.banner.won{border-color:var(--good)}
+.banner.lost{border-color:var(--danger)}
+.banner strong{font-family:var(--display);font-size:18px}
+.banner.won strong{color:var(--good)}
+.banner.lost strong{color:var(--danger)}
+.banner .row{gap:8px}
+
+.seats{display:grid;grid-template-columns:minmax(0,1.3fr) minmax(0,.9fr) minmax(0,1.2fr);gap:18px;align-items:start}
+.seats.single{grid-template-columns:minmax(0,760px);justify-content:center}
+@media (max-width:1150px){
+  .seats:not(.single){grid-template-columns:minmax(0,1fr) minmax(0,1fr)}
+  .seats:not(.single) .seat-past{grid-column:1 / -1}
+}
+@media (max-width:720px){
+  .seats:not(.single){grid-template-columns:minmax(0,1fr)}
+}
+.seat{background:var(--panel);border:2px solid var(--line);border-top-width:5px;box-shadow:0 6px 0 var(--shadow);display:flex;flex-direction:column;min-width:0}
+.seat-past{border-top-color:var(--past)}
+.seat-present{border-top-color:var(--present)}
+.seat-future{border-top-color:var(--future)}
+.seat-head{display:flex;flex-wrap:wrap;align-items:baseline;gap:4px 10px;padding:10px 14px;border-bottom:2px solid var(--line);background:var(--panel-2)}
+.seat-name{font-family:var(--display);font-size:20px;font-weight:700;line-height:1.1}
+.seat-past .seat-name{color:var(--past)}
+.seat-present .seat-name{color:var(--present)}
+.seat-future .seat-name{color:var(--future)}
+.seat-rule{font-size:13.5px;color:var(--muted)}
+.seat-body{padding:14px;display:flex;flex-direction:column;gap:12px;min-width:0}
+.tense{font-family:var(--mono);font-size:12px;color:var(--muted)}
+.tense b{font-weight:700}
+.seat-past .tense b{color:var(--past)}
+.seat-present .tense b{color:var(--present)}
+.seat-future .tense b{color:var(--future)}
+
+.canvas-wrap{width:100%;min-width:0;display:flex;justify-content:center}
+.canvas-wrap canvas{display:block;image-rendering:pixelated;max-width:100%}
+#pastCanvas{filter:sepia(.5) saturate(.72) brightness(.96)}
+.present-wrap{max-width:380px;margin:0 auto}
+.readout{display:flex;flex-wrap:wrap;gap:6px 14px;align-items:center;font-family:var(--mono);font-size:13px;color:var(--muted)}
+.readout b{color:var(--text);font-variant-numeric:tabular-nums}
+
+.log{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:4px;font-size:14px}
+.log li{display:grid;grid-template-columns:3.6em minmax(0,1fr);gap:8px;padding:4px 8px;background:var(--bg);border-left:3px solid var(--line)}
+.log li.bad{border-left-color:var(--danger)}
+.log li.good{border-left-color:var(--good)}
+.log li.event{border-left-color:var(--past)}
+.log .lt{font-family:var(--mono);font-size:12px;color:var(--muted);font-variant-numeric:tabular-nums;padding-top:1px}
+.log .empty{color:var(--muted);border-left-color:var(--line);display:block}
+
+.hud{display:flex;flex-wrap:wrap;gap:8px 12px;align-items:center;justify-content:space-between}
+.hearts{display:inline-flex;gap:4px;vertical-align:middle}
+.heart{width:14px;height:14px;background:var(--danger);box-shadow:inset -3px -3px 0 rgba(0,0,0,.28)}
+.heart.off{background:var(--line);box-shadow:none}
+.keychip{font-family:var(--display);font-size:12px;padding:3px 8px;border:2px solid var(--line);color:var(--muted)}
+.keychip.has{border-color:var(--present);color:var(--present)}
+.keychip.shard.has{border-color:var(--future);color:var(--future)}
+.msg{margin:0;min-height:3em;padding:8px 10px;background:var(--bg);border-left:3px solid var(--present);font-size:14.5px}
+.msg .floor{color:var(--muted)}
+.dpad{display:grid;grid-template-columns:repeat(3,56px);grid-template-rows:repeat(3,48px);gap:6px;justify-content:center}
+.dpad .btn{padding:0;font-size:18px;display:flex;align-items:center;justify-content:center}
+.dpad .up{grid-column:2;grid-row:1}
+.dpad .left{grid-column:1;grid-row:2}
+.dpad .wait{grid-column:2;grid-row:2;font-size:11px}
+.dpad .right{grid-column:3;grid-row:2}
+.dpad .down{grid-column:2;grid-row:3}
+.mirror-btn{align-self:center}
+.hint{margin:0;text-align:center;font-size:13px;color:var(--muted)}
+.locked-note{margin:0;text-align:center;font-size:13.5px;color:var(--muted);padding:6px;border:2px dashed var(--line)}
+
+.future-now{display:flex;flex-wrap:wrap;gap:6px 16px;align-items:baseline;justify-content:space-between}
+.big-turn{font-family:var(--display);font-size:22px;color:var(--future)}
+.doom{font-family:var(--mono);font-size:13px;color:var(--muted)}
+.doom b{color:var(--danger)}
+.timeline-wrap{overflow-x:auto;min-width:0;border:2px solid var(--line);background:var(--bg)}
+.timeline{border-collapse:separate;border-spacing:3px;font-family:var(--mono);font-size:12px;width:100%}
+.timeline th{font-weight:500;color:var(--muted);text-align:center;padding:2px 0;font-variant-numeric:tabular-nums}
+.timeline th.rowh{text-align:left;color:var(--text);padding:2px 8px 2px 4px;white-space:nowrap;font-family:var(--body);font-size:13px;font-weight:700}
+.timeline th.rowh small{display:block;font-weight:400;color:var(--muted);font-size:11px}
+.timeline td{padding:0;text-align:center}
+.blk{display:inline-flex;align-items:center;justify-content:center;min-width:24px;height:22px;padding:0 1px;font-size:10.5px;font-weight:700;border:2px solid var(--line);color:var(--muted);font-style:normal}
+.blk.open{color:#16141c}
+.blk.spike{background:var(--danger);border-color:var(--danger);color:#2b0c06}
+.blk.hold{background:#8c5d36;border-color:#8c5d36}
+.blk.gone{background:transparent;border-style:dashed;color:var(--danger)}
+.blk.fall{background:var(--danger);border-color:var(--danger);color:#2b0c06}
+.blk.zone{background:#24314f;border-color:#3e5c9c;color:#cfdcff}
+.blk.zone.fz{border-style:dotted;color:var(--muted);background:transparent}
+.legend{display:flex;flex-wrap:wrap;gap:6px 14px;font-size:12px;color:var(--muted)}
+.legend span{display:inline-flex;gap:6px;align-items:center}
+.legend .blk{min-width:14px;width:14px;height:14px}
+.upcoming{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:4px;font-size:14px}
+.upcoming li{display:grid;grid-template-columns:4.2em minmax(0,1fr);gap:8px;padding:4px 8px;background:var(--bg);border-left:3px solid var(--future)}
+.upcoming .lt{font-family:var(--mono);font-size:12px;color:var(--muted);font-variant-numeric:tabular-nums;padding-top:1px}
+.upcoming .quiet{display:block;border-left-color:var(--line);color:var(--muted)}
+.prophecy{border:2px solid var(--future);padding:10px 12px 12px;background:var(--panel-2)}
+.prophecy h3{font-family:var(--display);font-size:13px;letter-spacing:.06em;color:var(--future);margin:0 0 6px}
+.prophecy ul{margin:0;padding-left:18px;display:flex;flex-direction:column;gap:3px;font-size:14px}
+.section-label{font-family:var(--display);font-size:12px;letter-spacing:.06em;color:var(--muted);margin:0}
+
+.album-head{display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:6px 12px}
+.focus{display:inline-flex;gap:6px;align-items:center;font-family:var(--mono);font-size:12px;color:var(--muted)}
+.focus i{width:12px;height:12px;background:var(--future);display:inline-block;box-shadow:inset -3px -3px 0 rgba(0,0,0,.25)}
+.focus i.off{background:var(--line);box-shadow:none}
+.dive-result{margin:0;font-size:14px;padding:6px 10px;background:var(--bg);border-left:3px solid var(--future)}
+.dive-result.bad{border-left-color:var(--danger)}
+.mirror-box{border:2px solid var(--future);background:var(--bg);padding:10px;display:flex;flex-direction:column;gap:8px}
+.mirror-box .canvas-wrap{max-width:240px;margin:0 auto}
+
+.howto{background:var(--panel);border:2px solid var(--line);padding:12px 16px}
+.howto summary{cursor:pointer;font-family:var(--display);font-size:14px}
+.howto .cols{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,260px),1fr));gap:14px;margin-top:12px}
+.howto h3{font-family:var(--display);font-size:13px;margin:0 0 4px}
+.howto p,.howto ul{margin:0;font-size:14px;color:var(--muted);max-width:62ch}
+.howto ul{padding-left:18px}
+
+.stepper{display:inline-flex;align-items:center;gap:6px;font-family:var(--mono);font-size:12px;color:var(--muted)}
+.stepper button{width:26px;height:26px;padding:0;font-family:var(--display);font-size:14px;background:var(--panel-2);color:var(--past);border:2px solid var(--line);cursor:pointer}
+.stepper button[disabled]{opacity:.4;cursor:not-allowed}
+.stepper b{min-width:1.2em;text-align:center;color:var(--past);font-size:15px;font-variant-numeric:tabular-nums}
+.invite{display:flex;flex-wrap:wrap;gap:8px;align-items:center;width:100%}
+.invite input{flex:1 1 220px;min-width:0;font-family:var(--mono);font-size:12.5px;background:var(--bg);color:var(--text);border:2px solid var(--line);padding:7px 9px}
+
+/* Journal: a two-page spread with a turning leaf */
+.journal{display:flex;flex-direction:column;gap:8px}
+.book{position:relative;display:grid;grid-template-columns:1fr 1fr;perspective:1800px;filter:drop-shadow(0 6px 0 var(--shadow))}
+.book::before{content:'';position:absolute;inset:-6px -6px -8px -6px;background:#4a2f22;border:2px solid #2e1c14;z-index:-1}
+.page{position:relative;min-height:330px;padding:14px 12px 26px;color:var(--ink);overflow:hidden;
+  background:
+    repeating-linear-gradient(transparent 0 25px, rgba(70,110,150,.22) 25px 26px),
+    var(--paper);
+  background-position:0 34px, 0 0;
+  display:flex;flex-direction:column;gap:8px;min-width:0}
+.page.left{box-shadow:inset -14px 0 18px -14px rgba(0,0,0,.45)}
+.page.right{box-shadow:inset 14px 0 18px -14px rgba(0,0,0,.45)}
+.page .pno{position:absolute;bottom:6px;left:0;right:0;text-align:center;font-family:var(--hand);font-size:16px;color:#7a6a58}
+.page h4{font-family:var(--hand);font-weight:700;font-size:26px;line-height:1;margin:0;color:#3b2a1e}
+.page .hand{font-family:var(--hand);font-size:20px;line-height:1.15;color:#3b2a1e;margin:0}
+.page .hand.small{font-size:17px;color:#5a4636}
+.polaroid{margin:0 auto;background:#fbf8ef;padding:6px 6px 8px;box-shadow:0 3px 8px rgba(0,0,0,.25);transform:rotate(-1.6deg);position:relative;width:min(100%,190px)}
+.polaroid.tilt{transform:rotate(1.8deg)}
+.polaroid::before{content:'';position:absolute;top:-8px;left:50%;width:56px;height:16px;margin-left:-28px;background:rgba(240,214,140,.75);transform:rotate(-3deg)}
+.polaroid .pw{width:100%;display:flex;justify-content:center;background:#111}
+.polaroid canvas{display:block;max-width:100%;image-rendering:pixelated;filter:contrast(1.05) saturate(.9)}
+.polaroid .cap{font-family:var(--hand);font-size:19px;line-height:1;margin-top:5px;color:#2b2520}
+.page .note-text{font-family:var(--hand);font-size:18px;line-height:1.15;color:#3b2a1e;margin:0}
+.page .dive{align-self:center;font-family:var(--display);font-size:11px;padding:6px 10px;background:var(--ink);color:var(--paper);border:2px solid var(--ink);cursor:pointer}
+.page .dive[disabled]{opacity:.45;cursor:not-allowed}
+.page .stamp{position:absolute;top:44%;left:50%;transform:translate(-50%,-50%) rotate(-14deg);font-family:var(--display);font-size:22px;color:var(--danger);border:3px solid var(--danger);padding:2px 10px;background:rgba(251,248,239,.8);pointer-events:none}
+.page .doodle{align-self:center;margin-top:auto;opacity:.6}
+.leaf{position:absolute;top:0;bottom:0;width:50%;transform-style:preserve-3d;transition:transform .62s cubic-bezier(.45,.05,.3,1);z-index:3}
+.leaf .face{position:absolute;inset:0;backface-visibility:hidden;-webkit-backface-visibility:hidden}
+.leaf .face.back{transform:rotateY(180deg)}
+.leaf .face .page{height:100%}
+.book-nav{display:flex;align-items:center;justify-content:space-between;gap:8px;flex-wrap:wrap}
+.book-nav .btn{font-size:11px;padding:6px 10px}
+.book-nav span{font-family:var(--mono);font-size:12px;color:var(--muted)}
+
+/* Cinematic seat picker */
+.cine{position:fixed;inset:0;z-index:50;background:var(--cine-black);display:flex;align-items:center;justify-content:center;padding:16px;transition:opacity .6s ease}
+.cine.leaving{opacity:0}
+.cine-frame{position:relative;width:min(100%,980px);min-height:min(92vh,640px);border:2px solid var(--cine-blue);box-shadow:0 0 0 6px var(--cine-black),0 0 0 8px rgba(58,116,255,.35),0 0 60px var(--cine-glow),inset 0 0 60px rgba(58,116,255,.12);
+  display:flex;flex-direction:column;align-items:center;justify-content:center;gap:clamp(24px,5vh,48px);padding:32px 16px;overflow:hidden}
+.cine-room{margin:0;font-family:var(--mono);font-size:12px;letter-spacing:.2em;text-transform:uppercase;color:var(--cine-blue);opacity:0;animation:cineFade .8s ease .2s forwards}
+.cine-title{margin:0;font-family:var(--display);font-weight:400;font-size:clamp(28px,6vw,58px);color:#e9eeff;letter-spacing:.04em;text-align:center;text-shadow:0 0 18px var(--cine-glow)}
+.cine-title .ch{opacity:0;display:inline-block;animation:cineFade .25s ease forwards}
+.cine-title .dot{opacity:0;display:inline-block;animation:cineFade .3s ease forwards, cineBlink 1.4s ease-in-out 2.8s infinite}
+.cine-cards{display:flex;flex-wrap:wrap;justify-content:center;gap:clamp(44px,7vw,100px);padding-inline:30px}
+.cine-slot{opacity:0;animation:cineRise .7s ease forwards, cineDrift 5.6s ease-in-out infinite}
+.cine-slot:nth-child(1){animation-delay:2.1s, 2.8s;animation-duration:.7s, 5.3s}
+.cine-slot:nth-child(2){animation-delay:2.35s, 3.1s;animation-duration:.7s, 6.2s}
+.cine-slot:nth-child(3){animation-delay:2.6s, 2.95s;animation-duration:.7s, 5.8s}
+.cine-card{position:relative;width:150px;height:210px;background:none;border:0;padding:0;cursor:pointer;color:#e9eeff}
+.cine-card .sheet{position:absolute;inset:0;background:var(--cine-black);border:2px solid var(--cine-blue);transition:transform .38s cubic-bezier(.2,.8,.2,1.2), box-shadow .3s;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:10px;transform-origin:50% 100%}
+.cine-card .sheet.back{color:rgba(233,238,255,.75);font-family:var(--mono);font-size:12px;justify-content:flex-start;padding-top:14px}
+.cine-card .sheet.b1{transform:rotate(-2deg);align-items:flex-start;padding-left:10px}
+.cine-card .sheet.b2{transform:rotate(2deg);align-items:flex-end;padding-right:10px}
+.cine-card .front{box-shadow:0 0 22px rgba(58,116,255,.25)}
+.cine-card .front .nm{font-family:var(--display);font-size:20px;letter-spacing:.06em}
+.cine-card .front .role{font-family:var(--body);font-size:12.5px;color:#aab8e6;text-align:center;padding:0 12px;line-height:1.35}
+.cine-card[data-seat="past"] .front .nm{color:var(--past)}
+.cine-card[data-seat="present"] .front .nm{color:var(--present)}
+.cine-card[data-seat="future"] .front .nm{color:var(--future)}
+.cine-card:hover .sheet.b1,.cine-card:focus-visible .sheet.b1{transform:rotate(-14deg) translate(-28px,-2px)}
+.cine-card:hover .sheet.b2,.cine-card:focus-visible .sheet.b2{transform:rotate(14deg) translate(28px,-2px)}
+.cine-card:hover .front,.cine-card:focus-visible .front{transform:translateY(-12px) scale(1.04);box-shadow:0 0 34px var(--cine-glow)}
+.cine-card:focus-visible{outline:none}
+.cine-card:focus-visible .front{outline:2px solid #e9eeff;outline-offset:4px}
+.cine-card[disabled]{cursor:not-allowed}
+.cine-card[disabled] .sheet{border-color:#26314f}
+.cine-card[disabled] .front{opacity:.55}
+.cine-card .taken{position:absolute;bottom:16px;left:50%;transform:translateX(-50%);font-family:var(--display);font-size:11px;color:var(--danger);border:2px solid var(--danger);padding:2px 8px;background:#000}
+.cine-foot{margin:0;display:flex;flex-direction:column;align-items:center;gap:10px;opacity:0;animation:cineFade .8s ease 3s forwards;max-width:100%}
+.linkish{background:none;border:0;padding:4px;color:#8ea7e8;font-family:var(--mono);font-size:12px;text-decoration:underline;text-underline-offset:3px;cursor:pointer}
+.cine-invite{display:flex;gap:8px;align-items:center;flex-wrap:wrap;justify-content:center;max-width:100%}
+.cine-invite input{width:min(70vw,380px);font-family:var(--mono);font-size:12px;background:#000;color:#cfd9ff;border:2px solid #26314f;padding:6px 8px}
+.cine-invite .btn{background:#000;border-color:var(--cine-blue);color:#cfd9ff;box-shadow:none;font-size:11px}
+@keyframes cineFade{to{opacity:1}}
+@keyframes cineBlink{0%,100%{opacity:1}50%{opacity:.15}}
+@keyframes cineRise{from{opacity:0;transform:translateY(18px)}to{opacity:1;transform:none}}
+@keyframes cineDrift{0%{transform:translate(0,0) rotate(0)}25%{transform:translate(2px,-4px) rotate(.8deg)}50%{transform:translate(-1px,-6px) rotate(-.4deg)}75%{transform:translate(-3px,-2px) rotate(-.9deg)}100%{transform:translate(0,0) rotate(0)}}
+@media (prefers-reduced-motion: reduce){
+  .cine-slot,.cine-title .ch,.cine-title .dot,.cine-room,.cine-foot{animation:none!important;opacity:1!important}
+  .cine-card .sheet,.leaf{transition:none!important}
+}
+@media (prefers-reduced-motion: reduce){ .btn:active{transform:none} .photo{transform:none!important} }
+</style>
+</head>
+<body>
+<div class="app">
+  <header class="top">
+    <div>
+      <h1>Hour<span class="glass">glass</span> Keep</h1>
+      <p class="tag">One adventurer, three players, three moments in time. Past knows where. Future knows when. Present is the only one who can act.</p>
+    </div>
+    <div class="top-actions">
+      <div class="seg" id="seatFilter" aria-label="Which seats to show">
+        <button type="button" data-seat="all" aria-pressed="true">All seats</button>
+        <button type="button" data-seat="past" aria-pressed="false">Past</button>
+        <button type="button" data-seat="present" aria-pressed="false">Present</button>
+        <button type="button" data-seat="future" aria-pressed="false">Future</button>
+      </div>
+      <button type="button" class="btn" id="restartBtn">Restart</button>
+      <button type="button" class="btn" id="onlineBtn" aria-expanded="false">Play online</button>
+    </div>
+  </header>
+
+  <nav class="levels" id="levels" aria-label="Chapters"></nav>
+
+  <section class="online" id="onlinePanel" hidden>
+    <div id="onlineSetup" style="display:flex;flex-direction:column;gap:12px">
+      <h2>Play online</h2>
+      <p class="note" id="onlineNote"></p>
+      <div class="row">
+        <button type="button" class="btn primary" id="createBtn">Create room</button>
+        <span class="note">or join one:</span>
+        <input class="code-input" id="codeInput" maxlength="4" placeholder="CODE" autocomplete="off" aria-label="Room code">
+        <button type="button" class="btn" id="joinBtn">Join</button>
+      </div>
+      <p class="err" id="onlineErr" role="alert"></p>
+    </div>
+    <div id="onlineLive" style="display:flex;flex-direction:column;gap:10px" hidden>
+      <div class="row">
+        <span>Room <b class="chip" id="roomCode">----</b></span>
+        <span>You are <b id="mySeatLabel"></b></span>
+        <span id="presence" class="row" style="gap:6px"></span>
+        <button type="button" class="btn" id="switchSeatBtn">Switch seat</button>
+        <button type="button" class="btn" id="leaveBtn">Leave room</button>
+      </div>
+      <div class="invite">
+        <input id="inviteLink" readonly aria-label="Invite link">
+        <button type="button" class="btn" id="copyInvite">Copy invite link</button>
+      </div>
+      <p class="err" id="liveErr" role="alert"></p>
+    </div>
+  </section>
+
+  <section class="brief" id="brief" aria-live="polite">
+    <div><h2 id="briefName"></h2><p class="scene" id="briefScene"></p></div>
+    <ul id="briefList"></ul>
+  </section>
+
+  <div class="modebar" id="modeBar"></div>
+
+  <div class="banner" id="banner" hidden>
+    <div><strong id="bannerTitle"></strong><div id="bannerText"></div></div>
+    <div class="row">
+      <button type="button" class="btn" id="bannerRestart">Play again</button>
+      <button type="button" class="btn primary" id="bannerNext">Next chapter</button>
+    </div>
+  </div>
+
+  <main class="seats" id="seats">
+    <section class="seat seat-past" data-seat="past" aria-label="Past seat">
+      <header class="seat-head">
+        <span class="seat-name">Past</span>
+        <span class="seat-rule">Sees the whole map, but two turns late.</span>
+      </header>
+      <div class="seat-body">
+        <div class="readout" style="justify-content:space-between">
+          <span>Echo of turn <b id="pastTurn">0</b></span>
+          <span class="stepper" role="group" aria-label="How many turns behind Past sees">Turns behind
+            <button type="button" id="delayDown" aria-label="Fewer turns behind">−</button><b id="delayVal">2</b><button type="button" id="delayUp" aria-label="More turns behind">+</button>
+          </span>
+        </div>
+        <span class="tense">Speak in <b>past tense</b>: "You walked into the red hall."</span>
+        <div class="canvas-wrap" id="pastWrap"><canvas id="pastCanvas" aria-label="Map as it was two turns ago"></canvas></div>
+        <p class="section-label">What happened</p>
+        <ol class="log" id="pastLog"></ol>
+      </div>
+    </section>
+
+    <section class="seat seat-present" data-seat="present" aria-label="Present seat">
+      <header class="seat-head">
+        <span class="seat-name">Present</span>
+        <span class="seat-rule">Moves the hero. Sees one step around, right now.</span>
+      </header>
+      <div class="seat-body">
+        <span class="tense">Speak in <b>present tense</b>: "I'm standing on red stone."</span>
+        <div class="canvas-wrap present-wrap" id="presentWrap"><canvas id="presentCanvas" aria-label="The hero's surroundings"></canvas></div>
+        <div class="hud">
+          <span class="readout">Turn <b id="turnNow">0</b></span>
+          <span class="hearts" id="hearts" aria-label="Hearts"></span>
+          <span class="keychip" id="keyChip">No key</span>
+          <span class="keychip shard" id="shardChip" hidden>Shards 0</span>
+        </div>
+        <p class="msg" id="presentMsg" aria-live="polite"></p>
+        <div class="dpad" id="dpad">
+          <button type="button" class="btn up" data-move="U" aria-label="Move up">▲</button>
+          <button type="button" class="btn left" data-move="L" aria-label="Move left">◀</button>
+          <button type="button" class="btn wait" data-move="W" aria-label="Wait one turn">WAIT</button>
+          <button type="button" class="btn right" data-move="R" aria-label="Move right">▶</button>
+          <button type="button" class="btn down" data-move="D" aria-label="Move down">▼</button>
+        </div>
+        <button type="button" class="btn violet mirror-btn" id="mirrorBtn" data-move="V" hidden>Raise mirror shard (M)</button>
+        <p class="hint" id="presentHint">Arrow keys or WASD to move. Space to wait.</p>
+        <p class="locked-note" id="presentLocked" hidden>Only the Present player can move the hero.</p>
+      </div>
+    </section>
+
+    <section class="seat seat-future" data-seat="future" aria-label="Future seat">
+      <header class="seat-head">
+        <span class="seat-name">Future</span>
+        <span class="seat-rule">Sees what is coming. Never sees the map.</span>
+      </header>
+      <div class="seat-body">
+        <span class="tense">Speak in <b>future tense</b>: "The green door will open in 3 turns."</span>
+        <div class="future-now">
+          <span class="big-turn">Turn <span id="futureTurn">0</span></span>
+          <span class="doom" id="doom"></span>
+        </div>
+        <div class="mirror-box" id="mirrorBox" hidden>
+          <p class="section-label" id="mirrorLabel">Mirror</p>
+          <div class="canvas-wrap" id="mirrorWrap"><canvas id="mirrorCanvas" aria-label="What the hero sees right now"></canvas></div>
+        </div>
+        <p class="section-label">Next 10 turns</p>
+        <div class="timeline-wrap"><table class="timeline" id="timeline"></table></div>
+        <div class="legend" id="legend"></div>
+        <ol class="upcoming" id="upcoming"></ol>
+        <div id="albumBox" class="journal">
+          <div class="album-head">
+            <p class="section-label">Future's journal</p>
+            <span class="focus" id="focus"></span>
+          </div>
+          <p class="dive-result" id="diveResult"></p>
+          <div class="book" id="book">
+            <div class="page left" id="pageL"></div>
+            <div class="page right" id="pageR"></div>
+          </div>
+          <div class="book-nav">
+            <button type="button" class="btn" id="pgPrev">◀ Back</button>
+            <span id="pgInfo"></span>
+            <button type="button" class="btn" id="pgNext">Turn page ▶</button>
+          </div>
+        </div>
+        <div class="prophecy">
+          <h3>Prophecy</h3>
+          <ul id="prophecy"></ul>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <details class="howto" id="howto">
+    <summary>How to play</summary>
+    <div class="cols">
+      <div><h3>The setup</h3><p>Three players share one hero. Sit apart, or play on three devices, and talk out loud. Nobody can see another player's screen.</p></div>
+      <div><h3>Past</h3><p>Sees the full map with room names, but everything is two turns old. Knows where things are, not when.</p></div>
+      <div><h3>Present</h3><p>The only one who can move. Sees one step in every direction and nothing else. Knows what is under their feet right now.</p></div>
+      <div><h3>Future</h3><p>Knows when doors open, when hazards fire and where the guard will be. Keeps a journal of photos (shuffled every run) and the prophecy. Never sees the map unless Present raises a mirror shard.</p></div>
+      <div><h3>Photographs</h3><p>Each photo shows the 3×3 view from one exact spot, with brackets marking the spot. Present describes what they see, Past names the room, and Future dives in when it matches. A wrong dive costs 1 focus.</p></div>
+      <div><h3>Playing together</h3><p>Click Play online, create a room and send the invite link. Everyone who opens it is asked who they are: Past, Present or Future. Past can choose how many turns behind they see.</p></div>
+      <div><h3>House rule</h3><p>Each player may only speak in their own tense. Slip up and Present presses Wait once.</p></div>
+    </div>
+  </details>
+</div>
+
+<div class="cine" id="cine" role="dialog" aria-modal="true" aria-labelledby="cineTitle" hidden>
+  <div class="cine-frame">
+    <p class="cine-room" id="cineRoom"></p>
+    <h2 class="cine-title" id="cineTitle" aria-label="Who are you..."></h2>
+    <div class="cine-cards" id="cineCards"></div>
+    <div class="cine-foot" id="cineFoot"></div>
+  </div>
+</div>
+
+<script>
+(function(){
+'use strict';
+/* =====================================================================
+   CHAPTERS & LEVELS
+   Map legend (shared by every level):
+     #  wall            .  floor           S  start          E  exit
+     o  pit / water     =  bridge          *  ice            %  thin ice
+     ^  timed hazard    C  chest / case    m  mirror shard   p  floor plate
+     B  crate           r  low obstacle (table, rock, pedestal)
+     Capital letters listed in `doors` are doors.
+   A chapter holds settings every level in it shares; a level can override any of them.
+   ===================================================================== */
+function cellsOf(list){ return list.map(([x,y]) => x+','+y); }
+function loopPath(x1,y1,x2,y2){
+  const p = [];
+  for (let x=x1; x<=x2; x++) p.push([x,y1]);
+  for (let y=y1+1; y<=y2; y++) p.push([x2,y]);
+  for (let x=x2-1; x>=x1; x--) p.push([x,y2]);
+  for (let y=y2-1; y>y1; y--) p.push([x1,y]);
+  return p;
+}
+const MIRROR_PHOTO = {note:'Through this one, you will see what the hero sees.', effect:{type:'mirror', turns:6},
+  now:'You feel someone looking over your shoulder.', past:'Future started watching through the hero\'s eyes.'};
+
+const CHAPTERS = [
+/* ---------------------------------------------------------------- 1 */
+{
+  id:'keep', num:1, name:'Hourglass Keep', scene:'keep',
+  tagline:'A dark keep with timed doors, spike traps and a chasm.',
+  tags:['Timed doors','Spikes','Crumbling bridges','Mimics'],
+  chestStyle:'chest', exitColor:'#d8a836', needsKey:true,
+  doomName:'The keep', doomNow:'The keep collapses around you.', doomPast:'The keep collapsed.',
+  shardCharges:0, mirrorTurns:5, focus:0, photos:[], guards:[], hazards:[], collapses:[],
+  fillers:['Day one. The candles burn backwards here.','I keep hearing doors that are not there.','Do not trust a chest that breathes.','The sand in the big hourglass moves up.'],
+  levels:[
+  {
+    id:'gatehouse', name:'Gatehouse',
+    brief:['Past knows <b>where</b>, Future knows <b>when</b>, Present does the moving. Cross the spike row, find the real key, and get through the gold door while it is open.'],
+    map:[
+      '#############',
+      '#...#...#...#',
+      '#.C.#.C.A.E.#',
+      '#...#...#...#',
+      '##.###.######',
+      '#...........#',
+      '#^^^^^^^^^^^#',
+      '#.....S.....#',
+      '#############'
+    ],
+    rooms:[
+      {id:'green', name:'Green Room', color:'#58a062', word:'green', rect:[0,0,3,4], label:[2,1]},
+      {id:'purple', name:'Purple Room', color:'#9566c8', word:'purple', rect:[4,0,7,4], label:[6,1]},
+      {id:'gold', name:'Gold Room', color:'#d8a836', word:'gold', rect:[8,0,12,4], label:[10,1]},
+      {id:'red', name:'Spike Hall', color:'#c4553f', word:'red', rect:[0,5,12,6], label:[6,5]},
+      {id:'stone', name:'Yard', color:'#8b8697', word:'grey', rect:[0,7,12,8], label:[2,7]}
+    ],
+    doors:{ A:{kind:'timed', name:'Gold Door', word:'gold', color:'#e2b13a', sub:'Purple Room → Gold Room', open:[[12,18],[26,32],[40,46]]} },
+    hazards:[{char:'^', name:'Spikes', sub:'Spike Hall', sym:'▲', pattern:'01100100111010011001011100100110100011011001110010011011',
+      now:'Spikes burst from the floor! You stagger back.', past:'Spikes caught the hero in the Spike Hall.'}],
+    chests:{'2,2':{kind:'key'}, '6,2':{kind:'mimic'}},
+    doom:52,
+    prophecy:['The key is in the <b>Green Room</b>. The <b>Purple Room</b> chest bites.','The Gold Door leads out of the Purple Room.','The keep will fall on <b>turn 52</b>.']
+  },
+  {
+    id:'keep', name:'The Keep',
+    brief:['A bigger keep: three timed doors, two mimics, and a chasm whose bridges crumble in two stages.'],
+    map:[
+      '###################',
+      '#.....#.....#.....#',
+      '#..C..#..C..#..E..#',
+      '#.....#.....#.....#',
+      '###M#####.#####U###',
+      '#..^...^..#oooo=oo#',
+      '#..^...^.......=oo#',
+      '#..^...^..#oooo=oo#',
+      '#####.#####oooo=oo#',
+      '#.........#oooo=oo#',
+      '#....S....T....=oo#',
+      '#.......C.#ooooooo#',
+      '###################'
+    ],
+    rooms:[
+      {id:'green', name:'Green Vault', color:'#58a062', word:'green', rect:[0,0,5,4], label:[3,1]},
+      {id:'purple', name:'Purple Library', color:'#9566c8', word:'purple', rect:[6,0,11,4], label:[9,1]},
+      {id:'gold', name:'Gold Gate', color:'#d8a836', word:'gold', rect:[12,0,18,4], label:[15,1]},
+      {id:'red', name:'Red Hall', color:'#c4553f', word:'red', rect:[0,5,10,7], label:[5,5]},
+      {id:'blue', name:'Blue Chasm', color:'#4a86c2', word:'blue', rect:[11,5,18,12], label:[13,11]},
+      {id:'stone', name:'Stone Hall', color:'#8b8697', word:'grey', rect:[0,8,10,12], label:[3,9]}
+    ],
+    doors:{
+      M:{kind:'timed', name:'Moss Door', word:'green', color:'#62b06c', sub:'Red Hall → Green Vault', open:[[5,12],[19,26],[36,41]]},
+      U:{kind:'timed', name:'Sun Door', word:'gold', color:'#e2b13a', sub:'Blue Chasm → Gold Gate', open:[[16,21],[31,36],[45,51]]},
+      T:{kind:'timed', name:'Tide Door', word:'blue', color:'#4f90d2', sub:'Stone Hall → Blue Chasm', open:[[3,8],[18,24]]}
+    },
+    hazards:[{char:'^', name:'Spikes', sub:'Red Hall', sym:'▲',
+      pattern:'0110010011101001100101110010011010001101100111001001101100101110011010',
+      now:'Spikes burst from the floor! You stagger back.', past:'Spikes caught the hero in the Red Hall.'}],
+    collapses:[
+      {name:'Lower bridge', sub:'Blue Chasm', at:26, cells:cellsOf([[15,8],[15,9],[15,10]]), now:'A crash echoes from somewhere far off.', past:'The lower bridge crumbled into the chasm.'},
+      {name:'Upper bridge', sub:'Blue Chasm', at:50, cells:cellsOf([[15,5],[15,6],[15,7]]), now:'Another crash, louder this time.', past:'The upper bridge crumbled into the chasm.'}
+    ],
+    chests:{'3,2':{kind:'key'}, '9,2':{kind:'mimic'}, '8,11':{kind:'mimic'}},
+    doom:64,
+    prophecy:['The true key rests in the chest of the <b>Green Vault</b>.','The chests in the <b>Purple Library</b> and the <b>Stone Hall</b> are mimics.','Only the key opens the <b>Gold Gate</b>, past the Sun Door.','The keep will fall on <b>turn 64</b>.']
+  },
+  {
+    id:'stair', name:'The Sinking Stair',
+    brief:['Everything is falling. Three bridges give way one after another, and the long way round only opens late. Plan the route before you take a step.'],
+    map:[
+      '###################',
+      '#....ooooooooo....#',
+      '#.E..=========.C.C#',
+      '#....ooooooooo....#',
+      '##M##ooooooooo#=###',
+      '##.##ooooooooo#=###',
+      '##.##ooooooooo#=###',
+      '##.##ooooooooo#=###',
+      '##.##ooooooooo#=###',
+      '#....ooooooooo.^..#',
+      '#.S..=========^^..#',
+      '#....ooooooooo.^..#',
+      '###################'
+    ],
+    rooms:[
+      {id:'summit', name:'Summit', color:'#d8a836', word:'gold', rect:[0,0,4,3], label:[2,1]},
+      {id:'stairwell', name:'Stairwell', color:'#9566c8', word:'purple', rect:[0,4,4,8], label:null},
+      {id:'landing', name:'Landing', color:'#8b8697', word:'grey', rect:[0,9,4,12], label:[2,9]},
+      {id:'chasm', name:'Chasm', color:'#4a86c2', word:'blue', rect:[5,0,13,12], label:[9,6]},
+      {id:'spire', name:'Spire', color:'#58a062', word:'green', rect:[14,0,18,8], label:[16,1]},
+      {id:'ledge', name:'Spike Ledge', color:'#c4553f', word:'red', rect:[14,9,18,12], label:[16,11]}
+    ],
+    doors:{ M:{kind:'timed', name:'Stair Door', word:'purple', color:'#9566c8', sub:'Stairwell → Summit', open:[[50,58],[66,72]]} },
+    hazards:[{char:'^', name:'Spikes', sub:'Spike Ledge', sym:'▲', pattern:'0101101001101011001010110101001011010010110100101101001011',
+      now:'Spikes burst from the floor! You stagger back.', past:'Spikes caught the hero on the Spike Ledge.'}],
+    collapses:[
+      {name:'Low bridge', sub:'Landing → Spike Ledge', at:36, cells:cellsOf([[5,10],[6,10],[7,10],[8,10],[9,10],[10,10],[11,10],[12,10],[13,10]]), now:'A long rumble from below.', past:'The low bridge fell into the chasm.'},
+      {name:'Spire stair', sub:'Spike Ledge → Spire', at:44, cells:cellsOf([[15,4],[15,5],[15,6],[15,7],[15,8]]), now:'Wood splinters somewhere to the east.', past:'The Spire stair broke apart.'},
+      {name:'High bridge', sub:'Spire → Summit', at:70, cells:cellsOf([[5,2],[6,2],[7,2],[8,2],[9,2],[10,2],[11,2],[12,2],[13,2]]), now:'The last bridge groans and goes.', past:'The high bridge fell.'}
+    ],
+    chests:{'15,2':{kind:'key'}, '17,2':{kind:'mimic'}},
+    doom:80,
+    prophecy:['The key rests in the <b>Spire</b>, in the chest nearer the bridge. The far chest bites.','The low bridge falls on <b>turn 36</b>, the Spire stair on <b>44</b>, the high bridge on <b>70</b>.','The Stair Door from the Landing opens only late.','The keep will fall on <b>turn 80</b>.']
+  }
+  ]
+},
+/* ---------------------------------------------------------------- 2 */
+{
+  id:'darkroom', num:2, name:'The Darkroom', scene:'studio',
+  tagline:'An old photo studio after closing. The pictures still remember.',
+  tags:['Photographs','Sealed doors','Floor plates','Crates'],
+  chestStyle:'chest', exitColor:'#4d78b6', needsKey:true,
+  doomName:'The owner', doomNow:'Keys rattle in the front door. The owner is back.', doomPast:'The owner came back and caught everyone.',
+  fallNow:'The floorboards give way! You crawl back to where you started.', fallPast:'The hero fell through the broken floor.',
+  shardCharges:0, mirrorTurns:5, focus:3, guards:[], hazards:[], collapses:[],
+  fillers:['Fixer, stop bath, then rinse. Never the other way round.','Some of these were taken tomorrow.','The red light makes everything look like a memory.','If the photo moves, put it down.','Customer never came back for roll #12.','Do not develop the ones with brackets.'],
+  levels:[
+  {
+    id:'counter', name:'Front Counter',
+    brief:['<b>New: photographs.</b> Future\'s journal holds snapshots, each taken from one exact spot. When the hero stands there, Future can dive into the photo and change the world.','Present sees the same 3×3 view a photo shows. Describe it. A dive at the wrong spot costs Future 1 focus.'],
+    map:[
+      '#############',
+      '#.....#.....#',
+      '#..C..#..E..#',
+      '#.....#.....#',
+      '###.#####o###',
+      '#...........#',
+      '#....S......#',
+      '#...........#',
+      '#############'
+    ],
+    rooms:[
+      {id:'counter', name:'Counter', color:'#c9b58a', word:'cream', rect:[0,0,5,4], label:[3,1]},
+      {id:'office', name:'Back Office', color:'#4d78b6', word:'blue', rect:[6,0,12,4], label:[9,1]},
+      {id:'floor', name:'Shop Floor', color:'#a0703f', word:'brown', rect:[0,5,12,8], label:[9,7]}
+    ],
+    doors:{},
+    chests:{'3,2':{kind:'key'}},
+    doom:50,
+    photos:[
+      {cx:3,cy:5, note:'Dust will fall from the ceiling.', effect:{type:'none'}, now:'Dust drifts down. Nothing else happens.', past:'Dust fell on the Shop Floor. Nothing changed.'},
+      {cx:9,cy:5, note:'A plank will drop just ahead of where this was taken.', effect:{type:'plank', at:[9,4]}, now:'A plank crashes down across the hole in front of you!', past:'A plank fell across the hole into the Back Office.'}
+    ],
+    prophecy:['The key is in the <b>Counter</b> room.','The way into the Back Office is a hole in the floor. A photo can fix that.','The owner comes back on <b>turn 50</b>.']
+  },
+  {
+    id:'darkroom', name:'The Darkroom',
+    brief:['Three photos matter here: a sealed door, a floor plate, and a gap. The rest are there to fool you.'],
+    map:[
+      '###################',
+      '#.....#.......#...#',
+      '#..p..X.r.....V.C.#',
+      '#.....#.......#...#',
+      '#.....#....r..#####',
+      '##.################',
+      '#.......###########',
+      '#.......#....o....#',
+      '#.......R....o..E.#',
+      '#.......#....o....#',
+      '#...S...###########',
+      '#.......###########',
+      '###################'
+    ],
+    rooms:[
+      {id:'archive', name:'Archive', color:'#a0703f', word:'brown', rect:[0,0,5,5], label:[3,1]},
+      {id:'dark', name:'Darkroom', color:'#c8443a', word:'red', rect:[6,0,13,4], label:[10,1]},
+      {id:'vault', name:'Vault', color:'#3e9c94', word:'teal', rect:[14,0,18,4], label:[16,1]},
+      {id:'shop', name:'Front Shop', color:'#c9b58a', word:'cream', rect:[0,6,7,12], label:[4,7]},
+      {id:'hall', name:'Back Hall', color:'#4d78b6', word:'blue', rect:[8,6,18,12], label:[10,9]}
+    ],
+    doors:{
+      X:{kind:'sealed', name:'Darkroom Door', word:'red', color:'#c8443a', sub:'Archive → Darkroom'},
+      V:{kind:'plate', name:'Vault Door', word:'teal', color:'#3e9c94', sub:'Darkroom → Vault', plates:['3,2']},
+      R:{kind:'timed', name:'Roll Shutter', word:'grey', color:'#9aa3ad', sub:'Front Shop → Back Hall', open:[[8,14],[30,40],[46,58],[70,104]]}
+    },
+    chests:{'16,2':{kind:'key'}},
+    doom:110,
+    photos:[
+      {cx:5,cy:2, note:'A sealed door beside this spot will unlock.', effect:{type:'unseal', id:'X'}, now:'Something clicks. The red door beside you swings loose.', past:'The sealed Darkroom Door unlocked by itself.'},
+      {cx:12,cy:8, note:'A plank will drop just ahead of where this was taken.', effect:{type:'plank', at:[13,8]}, now:'A plank crashes down across the hole in front of you!', past:'A plank fell across the gap in the Back Hall.'},
+      {cx:11,cy:3, note:'A tray of chemicals will tip over.', effect:{type:'none'}, now:'A tray of chemicals tips over somewhere. Nothing else happens.', past:'A tray tipped over in the Darkroom. Nothing changed.'},
+      {cx:3,cy:3, note:'Something heavy will fall just above where this was taken.', effect:{type:'crate', at:[3,2]}, now:'A heavy crate thuds down right in front of you!', past:'A crate fell onto the Archive floor plate.'},
+      Object.assign({cx:8,cy:3}, MIRROR_PHOTO),
+      {cx:12,cy:7, note:'Dust will fall from the ceiling.', effect:{type:'none'}, now:'Dust drifts down from the ceiling. Nothing else happens.', past:'Dust fell in the Back Hall. Nothing changed.'}
+    ],
+    prophecy:['The key is in the <b>Vault</b>, behind the teal Vault Door.','The Vault Door stays open only while something heavy sits on the <b>Archive</b> floor plate.','A photo only works if the hero stands <b>exactly</b> where it was taken.','The owner comes back on <b>turn 110</b>.']
+  },
+  {
+    id:'stacks', name:'Archive Stacks',
+    brief:['<b>New: pushing crates.</b> Walk into a crate to shove it. A crate pushed into a hole fills it. The Vault Door needs <b>both</b> floor plates weighed down at once.'],
+    map:[
+      '#################',
+      '#.....#.....#...#',
+      '#.p...#..C..#.E.#',
+      '#.....#.....#...#',
+      '###X#####V####R##',
+      '#.......#.......#',
+      '#..B....#.......#',
+      '#.......o....B..#',
+      '#.......#.......#',
+      '#.......#....p..#',
+      '#...S...#.......#',
+      '#.......#.......#',
+      '#################'
+    ],
+    rooms:[
+      {id:'archive', name:'Archive', color:'#a0703f', word:'brown', rect:[0,0,5,4], label:[3,1]},
+      {id:'vault', name:'Vault', color:'#3e9c94', word:'teal', rect:[6,0,11,4], label:[9,1]},
+      {id:'exit', name:'Back Door', color:'#4d78b6', word:'blue', rect:[12,0,16,4], label:[14,1]},
+      {id:'stacks', name:'Stacks', color:'#c9b58a', word:'cream', rect:[0,5,7,12], label:[4,11]},
+      {id:'print', name:'Print Room', color:'#c8443a', word:'red', rect:[8,5,16,12], label:[12,11]}
+    ],
+    doors:{
+      X:{kind:'sealed', name:'Archive Door', word:'brown', color:'#a0703f', sub:'Stacks → Archive'},
+      V:{kind:'plate', need:'all', name:'Vault Door', word:'teal', color:'#3e9c94', sub:'Print Room → Vault', plates:['2,2','13,9']},
+      R:{kind:'timed', name:'Back Shutter', word:'grey', color:'#9aa3ad', sub:'Print Room → Back Door', open:[[20,26],[40,48],[60,70],[80,95]]}
+    },
+    chests:{'9,2':{kind:'key'}},
+    doom:100,
+    photos:[
+      {cx:3,cy:5, note:'A sealed door beside this spot will unlock.', effect:{type:'unseal', id:'X'}, now:'Something clicks. The door beside you swings loose.', past:'The sealed Archive Door unlocked by itself.'},
+      {cx:2,cy:3, note:'Something heavy will fall just above where this was taken.', effect:{type:'crate', at:[2,2]}, now:'A heavy crate thuds down right in front of you!', past:'A crate fell onto the Archive floor plate.'},
+      {cx:9,cy:5, note:'A sealed door beside this spot will unlock.', effect:{type:'none'}, now:'The door beside you rattles, but stays shut.', past:'The Vault Door rattled. Nothing changed.'},
+      Object.assign({cx:11,cy:9}, MIRROR_PHOTO),
+      {cx:14,cy:5, note:'Dust will fall from the ceiling.', effect:{type:'none'}, now:'Dust drifts down. Nothing else happens.', past:'Dust fell in the Print Room. Nothing changed.'}
+    ],
+    prophecy:['The key is in the <b>Vault</b>. Its door needs both floor plates pressed at once: one in the <b>Archive</b>, one in the <b>Print Room</b>.','The Stacks and the Print Room are split by a hole. Something heavy could fill it.','Two photos promise to unlock a door. Only one door is truly sealed.','The owner comes back on <b>turn 100</b>.']
+  }
+  ]
+},
+/* ---------------------------------------------------------------- 3 */
+{
+  id:'frost', num:3, name:'Frost Observatory', scene:'frost',
+  tagline:'A frozen dome. The ice carries you until something stops you.',
+  tags:['Sliding ice','Thin ice','Mirror shard','Photographs'],
+  chestStyle:'chest', exitColor:'#e0b03c', needsKey:true,
+  doomName:'The blizzard', doomNow:'Snow pours through the dome. Everything goes white.', doomPast:'The blizzard sealed the dome.',
+  fallNow:'You plunge into freezing water! You haul yourself out where you started.', fallPast:'The hero fell through into the water.',
+  shardCharges:2, mirrorTurns:5, focus:3, photos:[], guards:[], hazards:[], collapses:[], crateName:'ice block',
+  fillers:['The telescope only points at yesterday.','Ice remembers every step taken on it.','Wrote this with numb fingers. Sorry.','Thin ice hums before it breaks.','Rocks are friends on the rink.'],
+  levels:[
+  {
+    id:'pond', name:'Skating Pond',
+    brief:['<b>New: sliding ice.</b> Step onto ice and you slide until something blocks you. Present cannot see where they will stop, so Past has to call it.','<b>New: mirror shard.</b> Pick it up and Present can raise it (button or M) so Future sees the present for a few turns.'],
+    map:[
+      '#############',
+      '#...#******.#',
+      '#.E.#******C#',
+      '#...#***r**.#',
+      '#..S.****r*.#',
+      '#...#**r***.#',
+      '#...#******.#',
+      '#...#r*****.#',
+      '#...#******.#',
+      '#..m#******.#',
+      '#############'
+    ],
+    rooms:[
+      {id:'shore', name:'West Shore', color:'#4fa39a', word:'teal', rect:[0,0,4,10], label:[2,7]},
+      {id:'pond', name:'Pond', color:'#a9d6ea', word:'icy', rect:[5,0,10,10], label:[8,9]},
+      {id:'east', name:'East Shore', color:'#8a6fd0', word:'violet', rect:[11,0,12,10], label:null}
+    ],
+    doors:{},
+    chests:{'11,2':{kind:'key'}},
+    doom:60,
+    prophecy:['The key is on the <b>East Shore</b>, across the pond.','The way out is on the <b>West Shore</b>, where you started.','A mirror shard lies in the south corner of the West Shore.','The blizzard comes on <b>turn 60</b>.']
+  },
+  {
+    id:'observatory', name:'Frost Observatory',
+    brief:['Nothing on the rink will stop you on the row with the Dome Shutter. Unless you make something.'],
+    map:[
+      '###################',
+      '#.....#*******#...#',
+      '#..C..#*******#.E.#',
+      '#.....#****%%%D...#',
+      '#.....#*******#...#',
+      '###.###*******#####',
+      '#.....#*******#####',
+      '#......****r**#####',
+      '#.....#*******#####',
+      '#..S..#*******#####',
+      '#.....####.########',
+      '#.....####m########',
+      '###################'
+    ],
+    rooms:[
+      {id:'library', name:'Star Library', color:'#8a6fd0', word:'violet', rect:[0,0,5,5], label:[3,1]},
+      {id:'lab', name:'Cold Lab', color:'#4fa39a', word:'teal', rect:[0,6,6,12], label:[3,6]},
+      {id:'rink', name:'Ice Rink', color:'#a9d6ea', word:'icy', rect:[7,0,13,9], label:[10,8]},
+      {id:'dome', name:'Dome', color:'#e0b03c', word:'gold', rect:[14,0,18,4], label:[16,4]},
+      {id:'nook', name:'Nook', color:'#bfc6d2', word:'silver', rect:[7,10,13,12], label:null}
+    ],
+    doors:{ D:{kind:'timed', name:'Dome Shutter', word:'gold', color:'#e0b03c', sub:'Ice Rink → Dome', open:[[14,20],[28,34],[44,52],[60,70]]} },
+    collapses:[{name:'Thin ice', sub:'Before the Dome Shutter', at:64, char:'%', now:'A long crack splits the air.', past:'The thin ice in front of the Dome Shutter broke apart.'}],
+    chests:{'3,2':{kind:'key'}},
+    doom:84,
+    photos:[
+      {cx:12,cy:7, note:'Snow will drift down from the dome.', effect:{type:'none'}, now:'Snow drifts down around you. Nothing else happens.', past:'Snow fell on the rink. Nothing changed.'},
+      Object.assign({cx:2,cy:2}, MIRROR_PHOTO),
+      {cx:10,cy:7, note:'A block of ice will crash down far to the north.', effect:{type:'crate', at:[10,2]}, now:'Far to the north, something heavy crashes onto the ice.', past:'A block of ice fell onto the rink near the north wall.'},
+      {cx:10,cy:9, note:'A gust of cold air will blow through.', effect:{type:'none'}, now:'A cold gust blows past. Nothing else happens.', past:'A gust blew through the rink. Nothing changed.'}
+    ],
+    prophecy:['The key is in the <b>Star Library</b> chest.','Nothing on the rink stops you on the row with the Dome Shutter, unless you make something.','A <b>mirror shard</b> waits in a nook south of the rink.','The thin ice breaks on <b>turn 64</b>. The blizzard comes on <b>turn 84</b>.']
+  },
+  {
+    id:'meridian', name:'Meridian Hall',
+    brief:['The key sits on a chest in the middle of the rink. Slide into it from the right line and it stops you. Two shutters, thin ice, and a gap that needs a plank.'],
+    map:[
+      '###################',
+      '#.....#*******#...#',
+      '#..C..#*******#.E.#',
+      '#.....D*****%%F...#',
+      '#.....#*******#...#',
+      '#..S..#****r**#####',
+      '#.....#*******#####',
+      '#.....#***C***#####',
+      '#.....#*r*****#####',
+      '###.###*******#####',
+      '#..m..o*******#####',
+      '#.....#*******#####',
+      '###################'
+    ],
+    rooms:[
+      {id:'west', name:'West Wing', color:'#8a6fd0', word:'violet', rect:[0,0,6,8], label:[3,1]},
+      {id:'south', name:'Boiler Room', color:'#c4553f', word:'rusty', rect:[0,9,6,12], label:[3,11]},
+      {id:'rink', name:'Meridian Rink', color:'#a9d6ea', word:'icy', rect:[7,0,13,12], label:[10,11]},
+      {id:'dome', name:'Dome', color:'#e0b03c', word:'gold', rect:[14,0,18,4], label:[16,4]}
+    ],
+    doors:{
+      D:{kind:'timed', name:'West Shutter', word:'violet', color:'#8a6fd0', sub:'West Wing → Rink', open:[[4,14],[30,40],[56,66]]},
+      F:{kind:'timed', name:'Dome Shutter', word:'gold', color:'#e0b03c', sub:'Rink → Dome', open:[[22,28],[44,50],[64,74]]}
+    },
+    collapses:[{name:'Thin ice', sub:'Before the Dome Shutter', at:70, char:'%', now:'A long crack splits the air.', past:'The thin ice in front of the Dome Shutter broke apart.'}],
+    chests:{'10,7':{kind:'key'}, '3,2':{kind:'mimic'}},
+    mimicNow:'The chest snaps shut on your hand! It was a mimic.',
+    doom:96,
+    photos:[
+      {cx:5,cy:10, note:'A plank will drop just ahead of where this was taken.', effect:{type:'plank', at:[6,10]}, now:'A plank crashes down over the water ahead of you!', past:'A plank fell across the water in the Boiler Room.'},
+      {cx:7,cy:11, note:'A block of ice will crash down three steps to the east.', effect:{type:'crate', at:[10,11]}, now:'A block of ice crashes down a few steps away!', past:'A block of ice fell onto the bottom row of the rink.'},
+      Object.assign({cx:4,cy:5}, MIRROR_PHOTO),
+      {cx:13,cy:11, note:'A block of ice will crash down three steps to the west.', effect:{type:'none'}, now:'Snow drifts down. Nothing else happens.', past:'Snow fell in the rink corner. Nothing changed.'},
+      {cx:3,cy:8, note:'A gust of cold air will blow through.', effect:{type:'none'}, now:'A cold gust blows past. Nothing else happens.', past:'A gust blew through the West Wing. Nothing changed.'}
+    ],
+    prophecy:['The key sits on the rink itself, in the chest at its heart. The West Wing chest bites.','Sliding into a chest stops you on it.','The Boiler Room water needs a plank. The rink\'s bottom row could use a stopper.','The thin ice breaks on <b>turn 70</b>. The blizzard comes on <b>turn 96</b>.']
+  }
+  ]
+},
+/* ---------------------------------------------------------------- 4 */
+{
+  id:'museum', num:4, name:'Night Museum', scene:'museum',
+  tagline:'Steal the real hourglass. Guards walk fixed loops. One way out.',
+  tags:['Patrolling guards','Lasers','Crate puzzles','Locked cases'],
+  chestStyle:'case', exitColor:'#d1b23a', needsKey:true, keyLabel:'Hourglass',
+  keyNow:'You lift the real hourglass from its case.', keyPast:'The hero took the real hourglass.',
+  mimicNow:'Alarm! This one is a replica wired to the alarm.', mimicPast:'The hero opened a replica case and set off its alarm.',
+  sealedNow:'The glass case is locked tight.',
+  doomName:'Shift change', doomNow:'The lights snap on. The morning shift has arrived.', doomPast:'The morning shift arrived.',
+  shardCharges:2, mirrorTurns:5, focus:3, photos:[], guards:[], hazards:[], collapses:[],
+  fillers:['Guard rotation: same loop, every night, forever.','The East wing hums after midnight.','Replicas are wired. The real one is cold to the touch.','Radio code for "look away": crackle twice.','Lasers sleep in a rhythm. Learn it.'],
+  levels:[
+  {
+    id:'coat', name:'Coat Check',
+    brief:['<b>New: a guard.</b> He walks a fixed loop through the hall. Get next to him and he chases you back to the start. Future sees his zone for the next 10 turns.'],
+    map:[
+      '#############',
+      '#.....#.....#',
+      '#..C..#..E..#',
+      '#.....#.....#',
+      '###.#####.###',
+      '#...........#',
+      '#...........#',
+      '######.######',
+      '#.....S.....#',
+      '#############'
+    ],
+    rooms:[
+      {id:'coat', name:'Coat Room', color:'#b8483c', word:'red', rect:[0,0,5,4], label:[3,1]},
+      {id:'exit', name:'Exit Hall', color:'#4a7fc0', word:'blue', rect:[6,0,12,4], label:[9,1]},
+      {id:'hall', name:'Long Hall', color:'#cfc8b6', word:'white marble', rect:[0,5,12,6], label:[6,5]},
+      {id:'entry', name:'Entrance', color:'#8f5a8a', word:'plum', rect:[0,7,12,9], label:[3,8]}
+    ],
+    doors:{},
+    chests:{'3,2':{kind:'key'}},
+    keyNow:'You lift a small hourglass from the coat-check case.', keyPast:'The hero took the hourglass from the Coat Room.',
+    doom:60,
+    guards:[{name:'Guard', path:loopPath(1,5,11,6), offset:3, zone:[1,5,11,6]}],
+    photos:[
+      {cx:6,cy:7, note:'Everyone in this room will look the other way for a while.', effect:{type:'freeze', turns:6}, now:'A radio crackles. The guard turns away.', past:'The guard stopped and looked away.'},
+      {cx:3,cy:4, note:'The lights here will flicker.', effect:{type:'none'}, now:'The lights flicker. Nothing else happens.', past:'The lights flickered. Nothing changed.'}
+    ],
+    prophecy:['The hourglass is in the <b>Coat Room</b>. The way out is in the <b>Exit Hall</b>.','Guard zones: <b>N</b> north side, <b>S</b> south side; <b>W C E</b> west, center, east.','The morning shift arrives on <b>turn 60</b>.']
+  },
+  {
+    id:'museum', name:'Night Museum',
+    brief:['Three cases, one real. Lasers on the east side of the Atrium, and a crate to push onto the Storage plate.'],
+    map:[
+      '###################',
+      '#.....#.....#.....#',
+      '#..C..#..C..#..C..#',
+      '#.....#.....#.....#',
+      '###.#####.#####.###',
+      '#...........^.....#',
+      '#...........^.....#',
+      '#...........^.....#',
+      '###.#####.#########',
+      '#.....#.....#.....#',
+      '#..S..#...B.G...E.#',
+      '#m....#.p...#.....#',
+      '###################'
+    ],
+    rooms:[
+      {id:'west', name:'West Gallery', color:'#b8483c', word:'red', rect:[0,0,5,4], label:[3,1]},
+      {id:'central', name:'Central Gallery', color:'#4f9a5a', word:'green', rect:[6,0,11,4], label:[9,1]},
+      {id:'east', name:'East Gallery', color:'#4a7fc0', word:'blue', rect:[12,0,18,4], label:[15,1]},
+      {id:'atrium', name:'Atrium', color:'#cfc8b6', word:'white marble', rect:[0,5,18,7], label:[6,6]},
+      {id:'lobby', name:'Lobby', color:'#8f5a8a', word:'plum', rect:[0,8,5,12], label:[3,9]},
+      {id:'storage', name:'Storage', color:'#9a6a3c', word:'brown', rect:[6,8,11,12], label:[9,9]},
+      {id:'dock', name:'Loading Dock', color:'#d1b23a', word:'yellow', rect:[12,8,18,12], label:[15,9]}
+    ],
+    doors:{ G:{kind:'plate', name:'Dock Gate', word:'yellow', color:'#d1b23a', sub:'Storage → Loading Dock', plates:['8,11']} },
+    hazards:[{char:'^', name:'Lasers', sub:'Atrium, east side', sym:'≡', pattern:'1100110001110011000110011100011001100011100110001100111000110011',
+      now:'A laser sweeps across you and a buzzer shrieks. You jump back.', past:'The hero tripped the laser curtain.'}],
+    chests:{'3,2':{kind:'mimic'}, '9,2':{kind:'mimic'}, '15,2':{kind:'key', seal:'case'}},
+    doom:110,
+    photos:[
+      {cx:9,cy:3, note:'The glass case here will slide open.', effect:{type:'none'}, now:'The glass hums for a moment. Nothing opens.', past:'A case in the Central Gallery hummed. Nothing changed.'},
+      {cx:13,cy:6, note:'The lights here will flicker.', effect:{type:'none'}, now:'The lights flicker. Nothing else happens.', past:'The Atrium lights flickered. Nothing changed.'},
+      {cx:15,cy:3, note:'The glass case here will slide open.', effect:{type:'unseal', id:'case'}, now:'The glass case in front of you slides open.', past:'The locked case in the East Gallery slid open.'},
+      {cx:11,cy:6, note:'Everyone in this room will look the other way for a while.', effect:{type:'freeze', turns:8}, now:'Somewhere a radio crackles. The guard turns away.', past:'The guard stopped and looked away.'}
+    ],
+    guards:[{name:'Night guard', path:loopPath(2,5,16,7), offset:0, zone:[1,5,17,7]}],
+    prophecy:['The real hourglass is in the <b>East Gallery</b>. The other two cases are alarmed replicas.','The East case is locked. One of your photos opens it.','The <b>Dock Gate</b> opens while something heavy rests on the Storage floor plate.','Guard zones: <b>N</b> gallery side, <b>M</b> middle, <b>S</b> lobby side; <b>W C E</b> west, center, east.','The morning shift arrives on <b>turn 110</b>.']
+  },
+  {
+    id:'vault', name:'Vault of Hours',
+    brief:['Two guards, two halls, lasers in the middle rows. Push the crate down to the Storage plate, then cross both halls for the real hourglass.'],
+    map:[
+      '###################',
+      '#.....#.....#.....#',
+      '#..C..#..m..#..C..#',
+      '###.#####.#####.###',
+      '#.................#',
+      '#......^.....^....#',
+      '#.................#',
+      '#####.#####.#######',
+      '#.................#',
+      '#.........B.......#',
+      '#.................#',
+      '###.######.########',
+      '#.....#....G...E..#',
+      '#..S..#...p#......#',
+      '###################'
+    ],
+    rooms:[
+      {id:'westv', name:'West Vault', color:'#b8483c', word:'red', rect:[0,0,5,2], label:[3,1]},
+      {id:'clock', name:'Clock Room', color:'#d8a836', word:'gold', rect:[6,0,11,2], label:[9,1]},
+      {id:'eastv', name:'East Vault', color:'#4a7fc0', word:'blue', rect:[12,0,18,2], label:[15,1]},
+      {id:'upper', name:'Upper Hall', color:'#cfc8b6', word:'white marble', rect:[0,3,18,6], label:[10,4]},
+      {id:'lower', name:'Lower Hall', color:'#77737f', word:'grey marble', rect:[0,7,18,10], label:[15,9]},
+      {id:'lobby', name:'Lobby', color:'#8f5a8a', word:'plum', rect:[0,11,5,14], label:[3,12]},
+      {id:'storage', name:'Storage', color:'#9a6a3c', word:'brown', rect:[6,11,10,14], label:null},
+      {id:'dock', name:'Loading Dock', color:'#d1b23a', word:'yellow', rect:[11,11,18,14], label:[15,13]}
+    ],
+    doors:{ G:{kind:'plate', name:'Dock Gate', word:'yellow', color:'#d1b23a', sub:'Storage → Loading Dock', plates:['10,13']} },
+    hazards:[{char:'^', name:'Lasers', sub:'Upper Hall, middle row', sym:'≡', pattern:'110011100011001110001100111000110011100011001110',
+      now:'A laser sweeps across you and a buzzer shrieks. You jump back.', past:'The hero tripped a laser.'}],
+    chests:{'3,2':{kind:'mimic'}, '15,2':{kind:'key', seal:'case'}},
+    doom:150,
+    photos:[
+      {cx:15,cy:3, note:'The glass case here will slide open.', effect:{type:'unseal', id:'case'}, now:'The glass case in front of you slides open.', past:'The locked case in the East Vault slid open.'},
+      {cx:3,cy:3, note:'The glass case here will slide open.', effect:{type:'none'}, now:'The glass hums for a moment. Nothing opens.', past:'A case in the West Vault hummed. Nothing changed.'},
+      {cx:5,cy:8, note:'Everyone in both halls will look the other way for a while.', effect:{type:'freeze', turns:8}, now:'Radios crackle in both halls. The guards turn away.', past:'Both guards stopped and looked away.'},
+      {cx:11,cy:8, note:'The lights here will flicker.', effect:{type:'none'}, now:'The lights flicker. Nothing else happens.', past:'The Lower Hall lights flickered. Nothing changed.'},
+      Object.assign({cx:9,cy:3}, MIRROR_PHOTO)
+    ],
+    guards:[
+      {name:'Upper guard', sub:'Upper Hall zone', path:loopPath(1,4,17,6), offset:0, zone:[1,4,17,6]},
+      {name:'Lower guard', sub:'Lower Hall zone', path:loopPath(1,8,17,10).reverse(), offset:12, zone:[1,8,17,10]}
+    ],
+    prophecy:['The real hourglass is in the <b>East Vault</b>, locked. The West Vault case is an alarmed replica.','The <b>Dock Gate</b> opens while something heavy rests on the Storage plate, straight below the crate.','Lasers fire in the middle row of the Upper Hall.','Guard zones: <b>N</b> top row, <b>M</b> middle, <b>S</b> bottom row; <b>W C E</b> west, center, east.','The morning shift arrives on <b>turn 150</b>.']
+  }
+  ]
+}
+];
+
+/* ===== Online config: fill these in on your GitHub Pages copy ===== */
+const SUPABASE_URL = '';
+const SUPABASE_ANON_KEY = '';
+const TABLE = 'hourglass_rooms';
+
+const WINDOW = 10;  // how many turns ahead Future sees
+
+/* ===== Flatten chapters into a playable level list ===== */
+const LEVELS = [];
+CHAPTERS.forEach((c, ci) => {
+  c.levels.forEach((l, li) => {
+    const L = Object.assign({}, c, l);
+    delete L.levels;
+    L.chapter = c; L.ci = ci; L.li = li;
+    L.code = c.num + '-' + (li+1);
+    L.num = c.num;
+    L.scene = c.scene;
+    LEVELS.push(L);
+  });
+});
+function prepLevel(L){
+  L.W = L.map[0].length; L.H = L.map.length;
+  L.map.forEach((row,y) => { if (row.length!==L.W) console.warn('Level '+L.id+' row '+y+' has length '+row.length); });
+  L.crates0 = [];
+  for (let y=0;y<L.H;y++) for (let x=0;x<L.W;x++){
+    const c = L.map[y][x];
+    if (c==='S'){ L.sx=x; L.sy=y; }
+    if (c==='B') L.crates0.push(x+','+y);
+  }
+  L.photos = L.photos || [];
+  L.collapses.forEach(g => { g.set = g.cells ? new Set(g.cells) : null; });
+  L.crateName = L.crateName || 'crate';
+  L.fallNow = L.fallNow || 'You step into nothing and fall! You wake back in the '+roomNameAt(L,L.sx,L.sy)+'.';
+  L.fallPast = L.fallPast || 'The hero fell into the chasm.';
+  L.keyNow = L.keyNow || 'The chest creaks open. Inside: a key!';
+  L.keyPast = L.keyPast || null;
+  L.mimicNow = L.mimicNow || 'The chest has teeth! It bites you.';
+  L.mimicPast = L.mimicPast || null;
+  L.sealedNow = L.sealedNow || 'It is locked tight.';
+}
+function roomNameAt(L,x,y){ const r = L.rooms.find(r => x>=r.rect[0] && y>=r.rect[1] && x<=r.rect[2] && y<=r.rect[3]); return r ? r.name : 'start'; }
+LEVELS.forEach(prepLevel);
+
+let LV = LEVELS[0];
+
+/* ===== World queries ===== */
+const K = (x,y) => x+','+y;
+function ch(x,y){ if (x<0||y<0||x>=LV.W||y>=LV.H) return '#'; return LV.map[y][x]; }
+function roomAt(x,y){ return LV.rooms.find(r => x>=r.rect[0] && y>=r.rect[1] && x<=r.rect[2] && y<=r.rect[3]) || null; }
+function doorOpen(id,t,st){
+  const d = LV.doors[id];
+  if (!d) return true;
+  if (d.kind==='timed') return d.open.some(([a,b]) => t>=a && t<=b);
+  if (d.kind==='plate'){
+    if (!st) return false;
+    const pressed = k => st.crates.includes(k) || K(st.x,st.y)===k;
+    return d.need==='all' ? d.plates.every(pressed) : d.plates.some(pressed);
+  }
+  if (d.kind==='sealed') return !!st && st.unsealed.includes(id);
+  return false;
+}
+function collapsedAt(x,y,t){
+  for (const g of LV.collapses){
+    if (t < g.at) continue;
+    if (g.set ? g.set.has(K(x,y)) : ch(x,y)===g.char) return true;
+  }
+  return false;
+}
+function patched(st,x,y){ const k = K(x,y); return st.planks.includes(k) || st.filled.includes(k); }
+function pitAt(st,x,y,t){ const c = ch(x,y); if (c!=='o' && !collapsedAt(x,y,t)) return false; return !patched(st,x,y); }
+function iceAt(st,x,y,t){ const c = ch(x,y); return (c==='*' || c==='%') && !pitAt(st,x,y,t) && !patched(st,x,y); }
+function hazardAt(x,y){ const c = ch(x,y); return LV.hazards.find(h => h.char===c) || null; }
+function hazardUp(h,t){ return h.pattern[t % h.pattern.length]==='1'; }
+function guardPos(g,steps){ return g.path[((steps + (g.offset||0)) % g.path.length + g.path.length) % g.path.length]; }
+function guardsAt(st){ return LV.guards.map(g => guardPos(g, st.gsteps)); }
+function guardZone(g,x,y){
+  const [x1,y1,x2,y2] = g.zone; const w = x2-x1+1;
+  const col = ['W','C','E'][Math.min(2, Math.floor((x-x1)*3/w))];
+  const row = y<=y1 ? 'N' : (y>=y2 ? 'S' : 'M');
+  return row+col;
+}
+function blockReason(st,x,y,t){
+  const c = ch(x,y);
+  if (c==='#') return 'wall';
+  if (c==='r') return 'rock';
+  if (LV.doors[c] && !doorOpen(c,t,st)) return 'door:'+c;
+  if (c==='E' && LV.needsKey && !st.key) return 'gate';
+  if (c==='C'){ const info = LV.chests[K(x,y)]; if (info && info.seal && !st.unsealed.includes(info.seal) && !st.opened.includes(K(x,y))) return 'sealed'; }
+  return null;
+}
+function crateCanEnter(st,x,y,t){
+  const c = ch(x,y);
+  if ('#rCEm'.includes(c)) return false;
+  if (LV.doors[c] && !doorOpen(c,t,st)) return false;
+  if (st.crates.includes(K(x,y))) return false;
+  return true;
+}
+
+/* ===== Simulation: state = replay of moves + Future's dives ===== */
+const DIRS = {U:[0,-1],D:[0,1],L:[-1,0],R:[1,0],W:[0,0],V:[0,0]};
+function initState(){
+  return {t:0, x:LV.sx, y:LV.sy, spawn:[LV.sx,LV.sy], hearts:3, key:false, status:'playing',
+    opened:[], crates:LV.crates0.slice(), planks:[], filled:[], unsealed:[], taken:[], used:[],
+    shards:0, focus:LV.focus, mirrorUntil:-1, freezeUntil:-1, gsteps:0,
+    msg:'You wake in the '+roomNameAt(LV,LV.sx,LV.sy)+'. It is very dark.', lastDive:null,
+    log:[{t:0, text:'The hero woke in the '+roomNameAt(LV,LV.sx,LV.sy)+'.', kind:'event'}]};
+}
+function cloneState(s){
+  return Object.assign({}, s, {opened:s.opened.slice(), crates:s.crates.slice(), planks:s.planks.slice(),
+    filled:s.filled.slice(), unsealed:s.unsealed.slice(), taken:s.taken.slice(), used:s.used.slice(), spawn:s.spawn.slice()});
+}
+function blockText(r,st){
+  if (r==='wall') return 'Your hands find cold stone. A wall.';
+  if (r==='rock') return LV.scene==='studio' ? 'A worktable is in the way.' : (LV.scene==='frost' ? 'A frozen boulder is in the way.' : 'Something solid is in the way.');
+  if (r==='gate') return 'The way out is locked, and you have nothing to open it with.';
+  if (r==='sealed') return LV.sealedNow;
+  if (r.startsWith('door:')){ const d = LV.doors[r.slice(5)]; return 'A '+d.word+' door blocks the way. It is shut tight.'; }
+  return 'Something blocks the way.';
+}
+function respawn(n){ n.x = n.spawn[0]; n.y = n.spawn[1]; }
+
+function step(s,a){
+  const n = cloneState(s);
+  n.t = s.t+1; n.msg = '';
+  const t = n.t, out = [];
+  const say = (now,past,kind) => out.push({now,past,kind});
+  const frozen = t <= s.freezeUntil;
+  if (!frozen) n.gsteps = s.gsteps+1;
+  const [dx,dy] = DIRS[a] || [0,0];
+  let moved = false;
+
+  if (a==='V'){
+    if (n.shards>0){
+      n.shards--; n.mirrorUntil = t + LV.mirrorTurns;
+      say('You raise the mirror shard. It glows violet. Future can see what you see.','The hero raised a mirror shard so Future could see them.','event');
+    } else say('You have no mirror shard.');
+  } else if (a==='W' || (!dx && !dy)){
+    say('You hold still and listen.');
+  } else {
+    const tx = s.x+dx, ty = s.y+dy, tk = K(tx,ty);
+    const ci = n.crates.indexOf(tk);
+    if (ci>=0){
+      const bx = tx+dx, by = ty+dy, bk = K(bx,by);
+      if (ch(bx,by)!=='#' && pitAt(n,bx,by,t)){
+        n.crates.splice(ci,1); n.filled.push(bk); n.x=tx; n.y=ty; moved=true;
+        say('The '+LV.crateName+' tips into the hole and fills it.','The hero pushed a '+LV.crateName+' into a hole and filled it.','event');
+      } else if (crateCanEnter(n,bx,by,t)){
+        n.crates[ci] = bk; n.x=tx; n.y=ty; moved=true;
+        say('You shove the '+LV.crateName+'. It scrapes forward.');
+      } else say('The '+LV.crateName+' will not budge.');
+    } else {
+      const r = blockReason(n,tx,ty,t);
+      if (r) say(blockText(r,n));
+      else { n.x=tx; n.y=ty; moved=true; }
+    }
+    if (moved){
+      let slid = 0;
+      while (iceAt(n,n.x,n.y,t)){
+        const nx = n.x+dx, ny = n.y+dy;
+        if (n.crates.includes(K(nx,ny)) || blockReason(n,nx,ny,t)) break;
+        n.x=nx; n.y=ny; slid++;
+        if (pitAt(n,nx,ny,t)) break;
+      }
+      if (slid>0) say(slid>2 ? 'You slide a long way across the ice.' : 'You slide across the ice.');
+    }
+  }
+
+  const here = ch(n.x,n.y), hk = K(n.x,n.y);
+  if (here==='E' && (!LV.needsKey || n.key)){
+    n.status = 'won';
+    say('The way out opens. You escaped on turn '+t+'!','The hero escaped.','good');
+  } else if (pitAt(n,n.x,n.y,t)){
+    n.hearts--; respawn(n);
+    say(LV.fallNow, LV.fallPast, 'bad');
+  } else {
+    const hz = hazardAt(n.x,n.y);
+    if (hz && hazardUp(hz,t)){
+      n.hearts--;
+      if (moved){ n.x=s.x; n.y=s.y; }
+      say(hz.now, hz.past, 'bad');
+    } else if (here==='C' && !n.opened.includes(hk)){
+      const info = LV.chests[hk] || {kind:'mimic'};
+      n.opened.push(hk);
+      const room = roomNameAt(LV,n.x,n.y);
+      if (info.kind==='key'){ n.key = true; say(LV.keyNow, LV.keyPast || ('The hero opened the chest in the '+room+' and found the key.'), 'good'); }
+      else if (info.kind==='shard'){ n.shards += LV.shardCharges; say('Inside the chest: a mirror shard.','The hero found a mirror shard in the '+room+'.','good'); }
+      else { n.hearts--; say(LV.mimicNow, LV.mimicPast || ('A chest in the '+room+' was a mimic. It bit the hero.'), 'bad'); }
+    } else if (here==='m' && !n.taken.includes(hk)){
+      n.taken.push(hk); n.shards += LV.shardCharges;
+      say('You pick up a mirror shard. It hums faintly. ('+LV.shardCharges+' uses)','The hero picked up a mirror shard.','good');
+    }
+  }
+
+  if (n.status==='playing' && !frozen){
+    for (const g of LV.guards){
+      const [gx,gy] = guardPos(g,n.gsteps);
+      if (Math.abs(gx-n.x)+Math.abs(gy-n.y) <= 1){
+        n.hearts--; respawn(n);
+        say('A flashlight hits your face. "Hey! Stop!" You bolt back to the '+roomNameAt(LV,n.x,n.y)+'.','The guard spotted the hero and chased them back to the '+roomNameAt(LV,n.x,n.y)+'.','bad');
+        break;
+      }
+    }
+  }
+  if (n.status==='playing' && LV.guards.length){
+    const near = LV.guards.some(g => { const [gx,gy] = guardPos(g,n.gsteps); const d = Math.abs(gx-n.x)+Math.abs(gy-n.y); return d>=2 && d<=3; });
+    if (near) say('Footsteps, very close.');
+  }
+
+  for (const c of LV.collapses) if (t===c.at) say(c.now, c.past, 'event');
+  if (t===LV.doom-8) say('The walls start to shake.','The walls began to shake.','event');
+  if (n.status==='playing'){
+    if (n.hearts<=0){ n.status='lost'; say('Your last heart gives out.','The hero ran out of hearts.','bad'); }
+    else if (t>=LV.doom){ n.status='lost'; say(LV.doomNow, LV.doomPast, 'bad'); }
+  }
+  n.msg = out.map(o => o.now).filter(Boolean).join(' ');
+  const add = out.filter(o => o.past).map(o => ({t, text:o.past, kind:o.kind}));
+  n.log = add.length ? s.log.concat(add) : s.log;
+  return n;
+}
+
+function applyDive(s, idx){
+  const p = LV.photos[idx];
+  if (!p || s.status!=='playing' || s.used.includes(idx) || s.focus<=0) return s;
+  const n = cloneState(s), t = n.t;
+  const extra = [];
+  if (n.x===p.cx && n.y===p.cy){
+    n.used.push(idx);
+    const e = p.effect;
+    let ok = true;
+    if (e.type==='crate'){
+      const [x,y] = e.at, k = K(x,y);
+      if (pitAt(n,x,y,t)) n.filled.push(k);
+      else if (n.crates.includes(k) || '#rCE'.includes(ch(x,y)) || (n.x===x && n.y===y)) ok = false;
+      else n.crates.push(k);
+    } else if (e.type==='plank'){ n.planks.push(K(e.at[0],e.at[1])); }
+    else if (e.type==='unseal'){ n.unsealed.push(e.id); }
+    else if (e.type==='mirror'){ n.mirrorUntil = t + e.turns; }
+    else if (e.type==='freeze'){ n.freezeUntil = t + e.turns; }
+    if (ok){
+      n.lastDive = {t, idx, ok:true, text:'You dove into {photo}. It worked.'};
+      n.msg = (s.msg ? s.msg+' ' : '') + p.now;
+      extra.push({t, text:p.past, kind: e.type==='none' ? 'event' : 'good'});
+    } else {
+      n.lastDive = {t, idx, ok:true, text:'You dove into {photo}, but something was already in the way.'};
+      extra.push({t, text:'A photo dive fizzled: something was in the way.', kind:'event'});
+    }
+  } else {
+    n.focus--;
+    n.lastDive = {t, idx, ok:false, text:'{Photo} blurred. The hero is not standing where it was taken. You lost 1 focus.'};
+    extra.push({t, text:'Future dove into a photo, but the hero was somewhere else.', kind:'bad'});
+  }
+  n.log = s.log.concat(extra);
+  return n;
+}
+
+function parseDives(str){
+  const by = {};
+  if (!str) return by;
+  for (const part of str.split(';')){
+    const m = /^(\d+):(\d+)$/.exec(part); if (!m) continue;
+    (by[+m[1]] = by[+m[1]] || []).push(+m[2]);
+  }
+  return by;
+}
+function simulate(mv, dv){
+  const by = parseDives(dv);
+  const run = (s) => { for (const i of (by[s.t]||[])) s = applyDive(s,i); return s; };
+  const st = [run(initState())];
+  for (const a of mv){
+    const last = st[st.length-1];
+    if (last.status!=='playing') break;
+    st.push(run(step(last,a)));
+  }
+  return st;
+}
+
+/* ===== Color helpers ===== */
+function rgb(h){ h=h.replace('#',''); return [0,2,4].map(i => parseInt(h.slice(i,i+2),16)); }
+function mix(a,b,t){
+  const A=rgb(a), B=rgb(b);
+  return '#'+A.map((v,i) => Math.max(0,Math.min(255,Math.round(v+(B[i]-v)*t))).toString(16).padStart(2,'0')).join('');
+}
+function hash(x,y){
+  let h = (x*374761393 + y*668265263) | 0;
+  h = Math.imul(h ^ (h>>>13), 1274126177);
+  return ((h ^ (h>>>16)) >>> 0) / 4294967295;
+}
+
+/* ===== Scene palettes ===== */
+const SCENES = {
+  keep:   {floor:'#2b2733', wall:'#58535f', pit:'#08070b', lip:'#26212e', void:'#0c0b10', rock:'#6c6474', tint:.30},
+  studio: {floor:'#3a2a20', wall:'#6e5646', pit:'#0a0706', lip:'#2a1c14', void:'#0e0a08', rock:'#4e3a2c', tint:.26},
+  frost:  {floor:'#3c4858', wall:'#56677c', pit:'#06121c', lip:'#1d3446', void:'#0a1016', rock:'#8d9aa8', tint:.30},
+  museum: {floor:'#403e44', wall:'#5e5850', pit:'#08070b', lip:'#26212e', void:'#0e0d10', rock:'#a29a88', tint:.32}
+};
+const SC = () => SCENES[LV.scene] || SCENES.keep;
+
+/* ===== Blocky tiles ===== */
+function floorColor(x,y){
+  const r = roomAt(x,y), n = hash(x,y), sc = SC();
+  return r ? mix(sc.floor, r.color, sc.tint + n*0.07) : mix(sc.floor,'#000000',n*0.1);
+}
+function bevel(ctx,px,py,ts,base,b){
+  ctx.fillStyle = mix(base,'#ffffff',0.10); ctx.fillRect(px,py,ts,b); ctx.fillRect(px,py,b,ts);
+  ctx.fillStyle = mix(base,'#000000',0.32); ctx.fillRect(px,py+ts-b,ts,b); ctx.fillRect(px+ts-b,py,b,ts);
+}
+function drawFloor(ctx,px,py,ts,x,y){
+  const n = hash(x,y), base = floorColor(x,y), b = Math.max(1,Math.round(ts/16));
+  ctx.fillStyle = base; ctx.fillRect(px,py,ts,ts);
+  if (LV.scene==='studio'){
+    ctx.fillStyle = mix(base,'#000000',0.28);
+    for (let i=1;i<3;i++) ctx.fillRect(px, py+Math.round(i*ts/3), ts, Math.max(1,b));
+    ctx.fillRect(px+Math.round(ts*(0.25+n*0.5)), py, Math.max(1,b), Math.round(ts/3));
+  } else if (LV.scene==='museum'){
+    if ((x+y)%2===0){ ctx.fillStyle = mix(base,'#ffffff',0.07); ctx.fillRect(px,py,ts,ts); }
+  } else if (LV.scene==='frost'){
+    ctx.fillStyle = mix(base,'#ffffff',0.22);
+    const s = Math.max(1,Math.round(ts/12));
+    ctx.fillRect(px+Math.round(ts*(0.2+n*0.5)), py+Math.round(ts*0.3), s, s);
+    ctx.fillRect(px+Math.round(ts*(0.7-n*0.4)), py+Math.round(ts*0.72), s, s);
+  } else if (n>0.55){
+    const s = Math.max(2, Math.round(ts/9));
+    ctx.fillStyle = mix(base,'#000000',0.18);
+    ctx.fillRect(px+Math.round(ts*(0.18+hash(y,x)*0.55)), py+Math.round(ts*(0.2+(n-0.55)*1.2)), s, s);
+  }
+  bevel(ctx,px,py,ts,base,b);
+}
+function drawPit(ctx,px,py,ts,lip){
+  const sc = SC();
+  ctx.fillStyle = sc.pit; ctx.fillRect(px,py,ts,ts);
+  if (LV.scene==='frost'){
+    ctx.fillStyle = '#12304a';
+    const w = Math.max(1,Math.round(ts/14));
+    ctx.fillRect(px+Math.round(ts*0.15), py+Math.round(ts*0.62), Math.round(ts*0.3), w);
+    ctx.fillRect(px+Math.round(ts*0.55), py+Math.round(ts*0.78), Math.round(ts*0.3), w);
+  }
+  if (lip){
+    const h = Math.round(ts*0.3);
+    ctx.fillStyle = sc.lip; ctx.fillRect(px,py,ts,h);
+    ctx.fillStyle = mix(sc.lip,'#000000',0.35); ctx.fillRect(px,py+h,ts,Math.max(1,Math.round(h*0.45)));
+  }
+}
+function drawBridge(ctx,px,py,ts){
+  drawPit(ctx,px,py,ts,false);
+  const m = Math.round(ts*0.14), pw = ts-2*m, ph = Math.max(2,Math.round(ts/5.5));
+  for (let i=0;i<4;i++){
+    const yy = py + Math.round(i*ts/4) + 1;
+    ctx.fillStyle = i%2 ? '#8a5b35' : '#9c6b40';
+    ctx.fillRect(px+m, yy, pw, ph);
+    ctx.fillStyle = '#5e3c22'; ctx.fillRect(px+m, yy+ph-1, pw, 1);
+  }
+  const r = Math.max(2, Math.round(ts/10));
+  ctx.fillStyle = '#5b3a21';
+  ctx.fillRect(px+m-r, py, r, ts); ctx.fillRect(px+ts-m, py, r, ts);
+}
+function drawPlank(ctx,px,py,ts){
+  drawPit(ctx,px,py,ts,false);
+  const m = Math.round(ts*0.16);
+  ctx.fillStyle = '#a7743f'; ctx.fillRect(px-1, py+m, ts+2, ts-2*m);
+  ctx.fillStyle = '#7d5429';
+  ctx.fillRect(px-1, py+Math.round(ts/2)-1, ts+2, Math.max(1,Math.round(ts/16)));
+  ctx.fillStyle = '#3a2412';
+  const s = Math.max(2,Math.round(ts/12));
+  ctx.fillRect(px+Math.round(ts*0.12), py+m+s, s, s); ctx.fillRect(px+ts-Math.round(ts*0.12)-s, py+m+s, s, s);
+}
+function drawFilled(ctx,px,py,ts,x,y){
+  drawFloor(ctx,px,py,ts,x,y);
+  const m = Math.round(ts*0.1);
+  ctx.fillStyle = LV.scene==='frost' ? '#a8cfe0' : '#7a5230';
+  ctx.fillRect(px+m,py+m,ts-2*m,ts-2*m);
+  ctx.fillStyle = 'rgba(0,0,0,.2)'; ctx.fillRect(px+m,py+ts-m-Math.max(2,Math.round(ts/10)),ts-2*m,Math.max(2,Math.round(ts/10)));
+}
+function drawIce(ctx,px,py,ts,thin){
+  const base = thin ? '#93bed3' : '#b4d9ea', b = Math.max(1,Math.round(ts/16));
+  ctx.fillStyle = base; ctx.fillRect(px,py,ts,ts);
+  ctx.fillStyle = 'rgba(255,255,255,.6)';
+  const w = Math.max(1,Math.round(ts/14));
+  ctx.fillRect(px+Math.round(ts*0.18), py+Math.round(ts*0.22), Math.round(ts*0.34), w);
+  ctx.fillRect(px+Math.round(ts*0.52), py+Math.round(ts*0.6), Math.round(ts*0.24), w);
+  if (thin){
+    ctx.strokeStyle = '#3f6c85'; ctx.lineWidth = Math.max(1,ts/18);
+    ctx.beginPath(); ctx.moveTo(px+ts*0.1,py+ts*0.45); ctx.lineTo(px+ts*0.38,py+ts*0.55); ctx.lineTo(px+ts*0.52,py+ts*0.35); ctx.lineTo(px+ts*0.9,py+ts*0.48); ctx.stroke();
+    ctx.beginPath(); ctx.moveTo(px+ts*0.38,py+ts*0.55); ctx.lineTo(px+ts*0.44,py+ts*0.88); ctx.stroke();
+  }
+  bevel(ctx,px,py,ts,base,b);
+}
+function drawHazard(ctx,px,py,ts,h,up){
+  if (LV.scene==='museum'){
+    const em = Math.max(2,Math.round(ts/7));
+    ctx.fillStyle = '#2a2730';
+    ctx.fillRect(px+Math.round(ts*0.42), py+Math.round(ts*0.06), Math.round(ts*0.16), em);
+    ctx.fillRect(px+Math.round(ts*0.42), py+ts-Math.round(ts*0.06)-em, Math.round(ts*0.16), em);
+    if (up){
+      ctx.fillStyle = 'rgba(255,70,60,.25)'; ctx.fillRect(px+Math.round(ts*0.3), py, Math.round(ts*0.4), ts);
+      ctx.fillStyle = '#ff4b3e'; ctx.fillRect(px+Math.round(ts*0.46), py, Math.max(2,Math.round(ts/12)), ts);
+    }
+    return;
+  }
+  const pts = [[0.3,0.3],[0.7,0.3],[0.3,0.72],[0.7,0.72]];
+  for (const [fx,fy] of pts){
+    const cx = px+ts*fx, cy = py+ts*fy, s = ts*0.13;
+    if (up){
+      ctx.fillStyle = '#2a1f24';
+      ctx.fillRect(Math.round(cx-s), Math.round(cy+s*0.5), Math.round(s*2), Math.max(1,Math.round(s*0.5)));
+      ctx.fillStyle = '#ece6f0';
+      ctx.beginPath(); ctx.moveTo(cx-s,cy+s*0.6); ctx.lineTo(cx,cy-s*1.6); ctx.lineTo(cx+s,cy+s*0.6); ctx.closePath(); ctx.fill();
+      ctx.fillStyle = '#9a93a6';
+      ctx.beginPath(); ctx.moveTo(cx,cy-s*1.6); ctx.lineTo(cx+s,cy+s*0.6); ctx.lineTo(cx,cy+s*0.6); ctx.closePath(); ctx.fill();
+    } else {
+      ctx.fillStyle = '#141118';
+      ctx.fillRect(Math.round(cx-s*0.6), Math.round(cy-s*0.3), Math.round(s*1.2), Math.max(2,Math.round(s*0.8)));
+    }
+  }
+}
+function drawPlate(ctx,px,py,ts,x,y,pressed){
+  const base = floorColor(x,y), m = Math.round(ts*0.18);
+  ctx.fillStyle = mix(base,'#000000',0.45); ctx.fillRect(px+m,py+m,ts-2*m,ts-2*m);
+  ctx.fillStyle = pressed ? '#f2c14e' : mix(base,'#ffffff',0.25);
+  const b = Math.max(1,Math.round(ts/16));
+  ctx.fillRect(px+m,py+m,ts-2*m,b); ctx.fillRect(px+m,py+m,b,ts-2*m);
+  if (pressed){ ctx.fillRect(px+m,py+ts-m-b,ts-2*m,b); ctx.fillRect(px+ts-m-b,py+m,b,ts-2*m); }
+}
+function drawBlock(ctx,px,py,ts,h,top){
+  const front = mix(top,'#000000',0.42), b = Math.max(1,Math.round(ts/14));
+  ctx.fillStyle = front; ctx.fillRect(px,py+ts-h,ts,h);
+  ctx.fillStyle = top; ctx.fillRect(px,py-h,ts,ts);
+  ctx.fillStyle = mix(top,'#ffffff',0.14); ctx.fillRect(px,py-h,ts,b);
+  ctx.fillStyle = mix(top,'#000000',0.2); ctx.fillRect(px,py-h+ts-b,ts,b);
+  return front;
+}
+function drawWall(ctx,px,py,ts,h,x,y){
+  const n = hash(x,y), r = roomAt(x,y);
+  const top = r ? mix(SC().wall, r.color, 0.08+n*0.06) : mix(SC().wall,'#000000',n*0.1);
+  const front = drawBlock(ctx,px,py,ts,h,top);
+  const b = Math.max(1,Math.round(ts/14));
+  ctx.fillStyle = mix(front,'#000000',0.3);
+  ctx.fillRect(px+Math.round(ts*(n>0.5?0.32:0.66)), py+ts-h, b, h);
+  if (n>0.7){ ctx.fillStyle = mix(top,'#000000',0.12); ctx.fillRect(px+Math.round(ts*0.2),py-h+Math.round(ts*0.3),Math.round(ts*0.25),Math.round(ts*0.18)); }
+}
+function drawLowBlock(ctx,px,py,ts,top,inset){
+  const m = Math.round(ts*(inset||0.1)), w = ts-2*m, d = Math.round(ts*0.2), fh = Math.round(ts*0.32);
+  const x0 = px+m, y0 = py+Math.round(ts*0.42);
+  ctx.fillStyle = 'rgba(0,0,0,.4)'; ctx.fillRect(x0+2,y0+fh,w-2,Math.max(2,Math.round(ts*0.07)));
+  ctx.fillStyle = mix(top,'#000000',0.4); ctx.fillRect(x0,y0,w,fh);
+  ctx.fillStyle = top; ctx.fillRect(x0,y0-d-Math.round(ts*0.18),w,d+Math.round(ts*0.18));
+  ctx.fillStyle = mix(top,'#ffffff',0.18); ctx.fillRect(x0,y0-d-Math.round(ts*0.18),w,Math.max(1,Math.round(ts/16)));
+}
+function drawRock(ctx,px,py,ts){
+  const sc = SC();
+  if (LV.scene==='studio'){
+    drawLowBlock(ctx,px,py,ts,'#7a5a42',0.06);
+    ctx.fillStyle = '#c8443a';
+    ctx.fillRect(px+Math.round(ts*0.22), py+Math.round(ts*0.12), Math.round(ts*0.22), Math.round(ts*0.14));
+    ctx.fillStyle = '#e8e2d2';
+    ctx.fillRect(px+Math.round(ts*0.52), py+Math.round(ts*0.14), Math.round(ts*0.24), Math.round(ts*0.1));
+  } else drawLowBlock(ctx,px,py,ts,sc.rock,0.12);
+}
+function drawCrate(ctx,px,py,ts){
+  const ice = LV.scene==='frost';
+  const top = ice ? '#d6eef8' : '#a5733f';
+  const m = Math.round(ts*0.1), w = ts-2*m, d = Math.round(ts*0.22), fh = Math.round(ts*0.5);
+  const x0 = px+m, y0 = py+Math.round(ts*0.38);
+  ctx.fillStyle = 'rgba(0,0,0,.4)'; ctx.fillRect(x0+2,y0+fh,w-2,Math.max(2,Math.round(ts*0.07)));
+  ctx.fillStyle = mix(top,'#000000',0.35); ctx.fillRect(x0,y0,w,fh);
+  ctx.fillStyle = top; ctx.fillRect(x0,y0-d,w,d);
+  const b = Math.max(1,Math.round(ts/14));
+  ctx.fillStyle = ice ? '#7fb3cc' : '#6b4421';
+  ctx.fillRect(x0,y0,b,fh); ctx.fillRect(x0+w-b,y0,b,fh);
+  if (!ice){ ctx.beginPath(); ctx.strokeStyle = '#6b4421'; ctx.lineWidth = b; ctx.moveTo(x0,y0+fh); ctx.lineTo(x0+w,y0); ctx.stroke(); }
+  else { ctx.fillStyle = 'rgba(255,255,255,.7)'; ctx.fillRect(x0+Math.round(w*0.2),y0+Math.round(fh*0.2),Math.round(w*0.3),b); }
+}
+function drawDoorClosed(ctx,px,py,ts,h,id){
+  const d = LV.doors[id], col = d.color;
+  const top = mix(col,'#2a2333',0.45);
+  const front = drawBlock(ctx,px,py,ts,h,top);
+  ctx.fillStyle = mix(col,'#000000',0.15);
+  const b = Math.max(2,Math.round(ts/8));
+  for (let i=1;i<4;i++) ctx.fillRect(px+Math.round(i*ts/4)-1, py-h+Math.round(ts*0.18), Math.max(1,Math.round(b/2)), Math.round(ts*0.64));
+  ctx.fillStyle = col; ctx.fillRect(px, py-h+Math.round(ts*0.42), ts, Math.max(2,Math.round(ts/9)));
+  if (d.kind==='sealed'){
+    ctx.fillStyle = '#efe8da';
+    const s = Math.max(3,Math.round(ts/5));
+    ctx.fillRect(px+Math.round(ts/2-s/2), py-h+Math.round(ts*0.38), s, s);
+    ctx.fillStyle = '#2a1d10'; ctx.fillRect(px+Math.round(ts/2)-1, py-h+Math.round(ts*0.42), 2, Math.max(2,Math.round(s*0.6)));
+  }
+  ctx.fillStyle = mix(front,col,0.35); ctx.fillRect(px+Math.round(ts*0.4), py+ts-h, Math.round(ts*0.2), h);
+}
+function drawDoorOpen(ctx,px,py,ts,h,x,y,id){
+  drawFloor(ctx,px,py,ts,x,y);
+  const col = LV.doors[id].color, w = Math.max(3,Math.round(ts*0.16));
+  ctx.fillStyle = mix(col,'#000000',0.45);
+  ctx.fillRect(px, py+ts-h, w, h); ctx.fillRect(px+ts-w, py+ts-h, w, h);
+  ctx.fillStyle = col;
+  ctx.fillRect(px, py-h, w, ts); ctx.fillRect(px+ts-w, py-h, w, ts);
+}
+function drawChest(ctx,px,py,ts,stateName){
+  if (LV.chestStyle==='case') return drawCase(ctx,px,py,ts,stateName);
+  const w = Math.round(ts*0.64), hb = Math.round(ts*0.34), lid = Math.round(ts*0.2);
+  const x0 = px+Math.round((ts-w)/2), y0 = py+Math.round(ts*0.44);
+  ctx.fillStyle = 'rgba(0,0,0,.4)'; ctx.fillRect(x0+2, y0+hb, w-2, Math.max(2,Math.round(ts*0.07)));
+  ctx.fillStyle = '#6e4224'; ctx.fillRect(x0, y0, w, hb);
+  if (stateName==='closed'){
+    ctx.fillStyle = '#a5683a'; ctx.fillRect(x0, y0-lid, w, lid);
+    ctx.fillStyle = '#e0b54a'; ctx.fillRect(x0+Math.round(w/2)-Math.round(ts/16), y0-lid, Math.max(2,Math.round(ts/8)), lid+hb);
+    ctx.fillStyle = '#3a2412'; ctx.fillRect(x0+Math.round(w/2)-1, y0+Math.round(hb*0.25), 2, Math.max(2,Math.round(hb*0.3)));
+  } else if (stateName==='empty'){
+    ctx.fillStyle = '#1a120c'; ctx.fillRect(x0+2, y0, w-4, Math.round(hb*0.4));
+    ctx.fillStyle = '#a5683a'; ctx.fillRect(x0, y0-lid*2, w, lid);
+  } else {
+    ctx.fillStyle = '#3a0e0e'; ctx.fillRect(x0, y0-lid, w, lid+Math.round(hb*0.4));
+    ctx.fillStyle = '#a5683a'; ctx.fillRect(x0, y0-lid*2, w, lid);
+    ctx.fillStyle = '#f2ece2';
+    const tw = Math.max(2,Math.round(w/6));
+    for (let i=0;i<5;i++) ctx.fillRect(x0+1+i*Math.round(w/5), y0-lid, tw, Math.round(lid*0.7));
+    const e = Math.max(2,Math.round(ts/12));
+    ctx.fillStyle = '#e66a52'; ctx.fillRect(x0+Math.round(w*0.25), y0-lid*2+2, e, e); ctx.fillRect(x0+Math.round(w*0.68), y0-lid*2+2, e, e);
+  }
+}
+function drawHourglass(ctx,cx,cy,s){
+  ctx.fillStyle = '#d8a836';
+  ctx.fillRect(cx-s, cy-s*1.3, s*2, Math.max(2,s*0.3)); ctx.fillRect(cx-s, cy+s*1.0, s*2, Math.max(2,s*0.3));
+  ctx.fillStyle = '#f0e6c8';
+  ctx.beginPath(); ctx.moveTo(cx-s*0.8,cy-s); ctx.lineTo(cx+s*0.8,cy-s); ctx.lineTo(cx,cy); ctx.lineTo(cx+s*0.8,cy+s); ctx.lineTo(cx-s*0.8,cy+s); ctx.lineTo(cx,cy); ctx.closePath(); ctx.fill();
+  ctx.fillStyle = '#e2b13a';
+  ctx.beginPath(); ctx.moveTo(cx-s*0.45,cy+s); ctx.lineTo(cx+s*0.45,cy+s); ctx.lineTo(cx,cy+s*0.45); ctx.closePath(); ctx.fill();
+}
+function drawCase(ctx,px,py,ts,stateName){
+  const w = Math.round(ts*0.66), x0 = px+Math.round((ts-w)/2);
+  const ped = Math.round(ts*0.26), y0 = py+Math.round(ts*0.56);
+  ctx.fillStyle = 'rgba(0,0,0,.4)'; ctx.fillRect(x0+2, y0+ped, w-2, Math.max(2,Math.round(ts*0.07)));
+  ctx.fillStyle = '#6f6a62'; ctx.fillRect(x0, y0, w, ped);
+  ctx.fillStyle = '#b3ac9c'; ctx.fillRect(x0, y0-Math.round(ts*0.08), w, Math.round(ts*0.08));
+  const gh = Math.round(ts*0.5), gy = y0-Math.round(ts*0.08)-gh;
+  if (stateName==='closed'){
+    drawHourglass(ctx, px+ts/2, gy+gh*0.55, ts*0.12);
+    ctx.fillStyle = 'rgba(170,215,235,.28)'; ctx.fillRect(x0, gy, w, gh);
+    ctx.fillStyle = 'rgba(230,248,255,.75)'; ctx.fillRect(x0, gy, w, Math.max(1,Math.round(ts/18)));
+    ctx.fillRect(x0, gy, Math.max(1,Math.round(ts/18)), gh); ctx.fillRect(x0+w-Math.max(1,Math.round(ts/18)), gy, Math.max(1,Math.round(ts/18)), gh);
+    ctx.fillRect(x0+Math.round(w*0.2), gy+Math.round(gh*0.2), Math.max(1,Math.round(ts/18)), Math.round(gh*0.4));
+  } else if (stateName==='mimic'){
+    ctx.fillStyle = 'rgba(255,70,60,.3)'; ctx.fillRect(x0-2, gy-2, w+4, gh+4);
+    ctx.fillStyle = '#ff4b3e'; const s = Math.max(3,Math.round(ts/6)); ctx.fillRect(px+Math.round(ts/2-s/2), gy+Math.round(gh/2-s/2), s, s);
+  }
+}
+function drawGate(ctx,px,py,ts,h,lit){
+  const gold = LV.exitColor, post = Math.max(3,Math.round(ts*0.18));
+  ctx.fillStyle = lit ? '#fff1b8' : '#0d0b10';
+  ctx.fillRect(px+post, py-h+Math.round(ts*0.22), ts-post*2, ts+h-Math.round(ts*0.22)-2);
+  if (lit){ ctx.fillStyle = 'rgba(255,214,110,.35)'; ctx.fillRect(px-2,py-h-2,ts+4,ts+h+4); }
+  ctx.fillStyle = gold;
+  ctx.fillRect(px, py-h, post, ts+h); ctx.fillRect(px+ts-post, py-h, post, ts+h);
+  ctx.fillRect(px, py-h, ts, Math.round(ts*0.22));
+  ctx.fillStyle = mix(gold,'#000000',0.35);
+  ctx.fillRect(px, py+ts-Math.round(h*0.6), post, Math.round(h*0.6)); ctx.fillRect(px+ts-post, py+ts-Math.round(h*0.6), post, Math.round(h*0.6));
+}
+function drawShard(ctx,px,py,ts){
+  const cx = px+ts/2, cy = py+ts*0.5, s = ts*0.2;
+  ctx.fillStyle = 'rgba(187,152,242,.25)'; ctx.fillRect(px+Math.round(ts*0.2),py+Math.round(ts*0.2),Math.round(ts*0.6),Math.round(ts*0.6));
+  ctx.fillStyle = '#d7c2ff';
+  ctx.beginPath(); ctx.moveTo(cx,cy-s*1.5); ctx.lineTo(cx+s,cy); ctx.lineTo(cx,cy+s*1.5); ctx.lineTo(cx-s*0.8,cy); ctx.closePath(); ctx.fill();
+  ctx.fillStyle = '#8f66e0';
+  ctx.beginPath(); ctx.moveTo(cx,cy-s*1.5); ctx.lineTo(cx+s,cy); ctx.lineTo(cx,cy+s*1.5); ctx.closePath(); ctx.fill();
+}
+function drawHero(ctx,px,py,ts,hasKey){
+  const w = Math.round(ts*0.54), d = Math.round(ts*0.2), fh = Math.round(ts*0.44);
+  const x0 = px+Math.round((ts-w)/2), y0 = py+Math.round(ts*0.34);
+  ctx.fillStyle = 'rgba(0,0,0,.45)'; ctx.fillRect(x0+1, y0+fh-1, w, Math.max(2,Math.round(ts*0.08)));
+  ctx.fillStyle = '#ffe28f'; ctx.fillRect(x0, y0-d, w, d);
+  ctx.fillStyle = '#eaa93a'; ctx.fillRect(x0, y0, w, fh);
+  ctx.fillStyle = '#b97b22'; ctx.fillRect(x0, y0+fh-Math.max(2,Math.round(ts/14)), w, Math.max(2,Math.round(ts/14)));
+  const e = Math.max(2,Math.round(ts/11));
+  ctx.fillStyle = '#26190b';
+  ctx.fillRect(x0+Math.round(w*0.22), y0+Math.round(fh*0.3), e, e);
+  ctx.fillRect(x0+Math.round(w*0.66), y0+Math.round(fh*0.3), e, e);
+  if (hasKey){
+    const k = Math.max(2,Math.round(ts/12)), kx = x0+w-Math.round(k*1.5), ky = y0-d-k*4;
+    ctx.fillStyle = '#ffd34d';
+    ctx.fillRect(kx, ky, k*2, k*2); ctx.fillRect(kx+Math.round(k*0.5), ky+k*2, k, k*2); ctx.fillRect(kx+k, ky+k*3, k, k);
+    ctx.fillStyle = '#2b1d08'; ctx.fillRect(kx+Math.round(k*0.6), ky+Math.round(k*0.6), Math.max(1,Math.round(k*0.8)), Math.max(1,Math.round(k*0.8)));
+  }
+}
+function drawGuard(ctx,px,py,ts,dir,frozen){
+  const w = Math.round(ts*0.54), d = Math.round(ts*0.2), fh = Math.round(ts*0.48);
+  const x0 = px+Math.round((ts-w)/2), y0 = py+Math.round(ts*0.32);
+  if (!frozen){
+    ctx.fillStyle = 'rgba(255,236,150,.22)';
+    const cx = px+ts/2, cy = py+ts/2;
+    ctx.beginPath();
+    if (dir[0]){ ctx.moveTo(cx,cy); ctx.lineTo(cx+dir[0]*ts*1.6, cy-ts*0.7); ctx.lineTo(cx+dir[0]*ts*1.6, cy+ts*0.7); }
+    else { ctx.moveTo(cx,cy); ctx.lineTo(cx-ts*0.7, cy+dir[1]*ts*1.6); ctx.lineTo(cx+ts*0.7, cy+dir[1]*ts*1.6); }
+    ctx.closePath(); ctx.fill();
+  }
+  ctx.fillStyle = 'rgba(0,0,0,.45)'; ctx.fillRect(x0+1, y0+fh-1, w, Math.max(2,Math.round(ts*0.08)));
+  ctx.fillStyle = '#20304f'; ctx.fillRect(x0, y0-d, w, d);
+  ctx.fillStyle = '#3e5c9c'; ctx.fillRect(x0, y0, w, fh);
+  ctx.fillStyle = '#e8c9a0'; ctx.fillRect(x0+Math.round(w*0.15), y0+Math.round(fh*0.12), Math.round(w*0.7), Math.round(fh*0.32));
+  const e = Math.max(2,Math.round(ts/12));
+  ctx.fillStyle = '#1a1410';
+  if (frozen){ ctx.fillRect(x0+Math.round(w*0.22), y0+Math.round(fh*0.26), e*2, Math.max(1,Math.round(e/2))); ctx.fillRect(x0+Math.round(w*0.6), y0+Math.round(fh*0.26), e*2, Math.max(1,Math.round(e/2))); }
+  else { ctx.fillRect(x0+Math.round(w*0.28), y0+Math.round(fh*0.2), e, e); ctx.fillRect(x0+Math.round(w*0.62), y0+Math.round(fh*0.2), e, e); }
+  ctx.fillStyle = '#d8a836'; ctx.fillRect(x0+Math.round(w*0.4), y0+Math.round(fh*0.62), Math.max(2,Math.round(ts/12)), Math.max(2,Math.round(ts/12)));
+}
+function drawStartRune(ctx,px,py,ts){
+  ctx.fillStyle = 'rgba(242,193,78,.28)';
+  const s = Math.max(2,Math.round(ts/10)), c = Math.round(ts/2);
+  ctx.fillRect(px+c-s*2, py+c-Math.round(s/2), s*4, s); ctx.fillRect(px+c-Math.round(s/2), py+c-s*2, s, s*4);
+}
+
+/* cam: {x0,y0,cols,rows,ts,h,vis(x,y),noHero} */
+function drawWorld(ctx,st,cam){
+  const {ts,h} = cam, t = st.t;
+  const P = (x,y) => [(x-cam.x0)*ts, (y-cam.y0)*ts + h];
+  const guards = LV.guards.map(g => {
+    const [gx,gy] = guardPos(g, st.gsteps), [nx,ny] = guardPos(g, st.gsteps+1);
+    return {x:gx, y:gy, dir:[Math.sign(nx-gx), Math.sign(ny-gy)]};
+  });
+  const frozen = t <= st.freezeUntil;
+  for (let y=cam.y0; y<cam.y0+cam.rows; y++){
+    for (let x=cam.x0; x<cam.x0+cam.cols; x++){
+      if (!cam.vis(x,y)) continue;
+      const c = ch(x,y), [px,py] = P(x,y), k = K(x,y);
+      if (c==='#') continue;
+      if (LV.doors[c]){ if (doorOpen(c,t,st)) drawDoorOpen(ctx,px,py,ts,h,x,y,c); else drawFloor(ctx,px,py,ts,x,y); continue; }
+      if (st.planks.includes(k)){ drawPlank(ctx,px,py,ts); continue; }
+      if (st.filled.includes(k)){ drawFilled(ctx,px,py,ts,x,y); continue; }
+      if (pitAt(st,x,y,t)){
+        const a = ch(x,y-1);
+        drawPit(ctx,px,py,ts, !(a==='o' || a==='=' || pitAt(st,x,y-1,t)));
+        continue;
+      }
+      if (c==='='){ drawBridge(ctx,px,py,ts); continue; }
+      if (c==='*' || c==='%'){ drawIce(ctx,px,py,ts,c==='%'); continue; }
+      drawFloor(ctx,px,py,ts,x,y);
+      const hz = hazardAt(x,y);
+      if (hz) drawHazard(ctx,px,py,ts,hz,hazardUp(hz,t));
+      if (c==='p') drawPlate(ctx,px,py,ts,x,y, st.crates.includes(k) || (!cam.noHero && st.x===x && st.y===y));
+      if (c==='S') drawStartRune(ctx,px,py,ts);
+    }
+  }
+  for (let y=cam.y0; y<cam.y0+cam.rows; y++){
+    for (let x=cam.x0; x<cam.x0+cam.cols; x++){
+      if (!cam.vis(x,y)) continue;
+      const c = ch(x,y), [px,py] = P(x,y), k = K(x,y);
+      if (c==='#') drawWall(ctx,px,py,ts,h,x,y);
+      else if (c==='r') drawRock(ctx,px,py,ts);
+      else if (LV.doors[c] && !doorOpen(c,t,st)) drawDoorClosed(ctx,px,py,ts,h,c);
+      else if (c==='E') drawGate(ctx,px,py,ts,h,!LV.needsKey || st.key);
+      else if (c==='C'){
+        const info = LV.chests[k] || {};
+        drawChest(ctx,px,py,ts, !st.opened.includes(k) ? 'closed' : (info.kind==='mimic' ? 'mimic' : 'empty'));
+      } else if (c==='m' && !st.taken.includes(k)) drawShard(ctx,px,py,ts);
+      if (st.crates.includes(k)) drawCrate(ctx,px,py,ts);
+      for (const g of guards) if (g.x===x && g.y===y) drawGuard(ctx,px,py,ts,g.dir,frozen);
+      if (!cam.noHero && st.x===x && st.y===y) drawHero(ctx,px,py,ts,st.key);
+    }
+  }
+}
+
+function sizeCanvas(cv,wrap,cols,rows,maxW){
+  const avail = Math.min(wrap.clientWidth, maxW || Infinity);
+  if (!avail) return null;
+  const ts = Math.max(8, Math.floor(avail/cols));
+  const h = Math.round(ts*0.3);
+  const cw = ts*cols, chh = ts*rows + h;
+  const dpr = window.devicePixelRatio || 1;
+  if (cv.width !== Math.round(cw*dpr) || cv.height !== Math.round(chh*dpr)){
+    cv.width = Math.round(cw*dpr); cv.height = Math.round(chh*dpr);
+  }
+  cv.style.width = cw+'px'; cv.style.height = chh+'px';
+  const ctx = cv.getContext('2d');
+  ctx.setTransform(dpr,0,0,dpr,0,0);
+  ctx.imageSmoothingEnabled = false;
+  return {ctx,ts,h,cw,ch:chh};
+}
+
+function drawFullMap(cv,wrap,st){
+  const s = sizeCanvas(cv,wrap,LV.W,LV.H);
+  if (!s) return;
+  const {ctx,ts,h} = s;
+  ctx.fillStyle = SC().void; ctx.fillRect(0,0,s.cw,s.ch);
+  drawWorld(ctx,st,{x0:0,y0:0,cols:LV.W,rows:LV.H,ts,h,vis:()=>true});
+  const fs = Math.max(9, Math.round(ts*0.34));
+  ctx.font = '700 '+fs+'px Silkscreen, "Courier New", monospace';
+  ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+  for (const r of LV.rooms){
+    if (!r.label) continue;
+    const text = r.name.toUpperCase();
+    const cx = (r.label[0]+0.5)*ts, cy = r.label[1]*ts + h + Math.round(ts*0.32);
+    const tw = ctx.measureText(text).width + 8;
+    ctx.fillStyle = 'rgba(10,9,13,.72)';
+    ctx.fillRect(Math.round(cx-tw/2), Math.round(cy-fs*0.7), Math.round(tw), Math.round(fs*1.4));
+    ctx.fillStyle = mix(r.color,'#ffffff',0.35);
+    ctx.fillText(text, cx, cy+1);
+  }
+}
+
+function drawLocalView(cv,wrap,st,maxW){
+  const s = sizeCanvas(cv,wrap,5,5,maxW);
+  if (!s) return;
+  const {ctx,ts,h} = s;
+  ctx.fillStyle = '#0b0a0f'; ctx.fillRect(0,0,s.cw,s.ch);
+  for (let y=0;y<5;y++) for (let x=0;x<5;x++){
+    const n = hash(x+31,y+17);
+    if (n>0.5){ ctx.fillStyle = '#121017'; const q = Math.round(ts*0.22); ctx.fillRect(x*ts+Math.round(n*ts*0.5), y*ts+h+Math.round((1-n)*ts*0.5), q, q); }
+  }
+  const vis = (x,y) => Math.abs(x-st.x)<=1 && Math.abs(y-st.y)<=1;
+  drawWorld(ctx,st,{x0:st.x-2,y0:st.y-2,cols:5,rows:5,ts,h,vis});
+  const cx = 2.5*ts, cy = 2.5*ts + h;
+  const g = ctx.createRadialGradient(cx,cy,ts*0.9,cx,cy,ts*2.2);
+  g.addColorStop(0,'rgba(11,10,15,0)'); g.addColorStop(0.55,'rgba(11,10,15,.35)'); g.addColorStop(1,'rgba(11,10,15,.96)');
+  ctx.fillStyle = g; ctx.fillRect(0,0,s.cw,s.ch);
+  const warm = ctx.createRadialGradient(cx,cy,0,cx,cy,ts*1.4);
+  warm.addColorStop(0,'rgba(255,190,90,.12)'); warm.addColorStop(1,'rgba(255,190,90,0)');
+  ctx.fillStyle = warm; ctx.fillRect(0,0,s.cw,s.ch);
+}
+
+function drawPhoto(cv,wrap,p){
+  const s = sizeCanvas(cv,wrap,3,3);
+  if (!s) return;
+  const {ctx,ts,h} = s;
+  ctx.fillStyle = SC().void; ctx.fillRect(0,0,s.cw,s.ch);
+  const st = initState();
+  drawWorld(ctx,st,{x0:p.cx-1,y0:p.cy-1,cols:3,rows:3,ts,h,vis:()=>true,noHero:true});
+  const g = ctx.createRadialGradient(s.cw/2,s.ch/2,ts*0.6,s.cw/2,s.ch/2,ts*2.1);
+  g.addColorStop(0,'rgba(0,0,0,0)'); g.addColorStop(1,'rgba(0,0,0,.45)');
+  ctx.fillStyle = g; ctx.fillRect(0,0,s.cw,s.ch);
+  // viewfinder brackets on the spot the photo was taken from
+  const x0 = ts, y0 = ts+h, L = Math.max(4,Math.round(ts*0.22)), b = Math.max(2,Math.round(ts/16));
+  ctx.fillStyle = 'rgba(255,255,255,.85)';
+  for (const [cx,cy,sx,sy] of [[x0,y0,1,1],[x0+ts,y0,-1,1],[x0,y0+ts,1,-1],[x0+ts,y0+ts,-1,-1]]){
+    ctx.fillRect(sx>0?cx:cx-L, sy>0?cy:cy-b, L, b);
+    ctx.fillRect(sx>0?cx:cx-b, sy>0?cy:cy-L, b, L);
+  }
+}
+
+/* ===== App state ===== */
+const $ = id => document.getElementById(id);
+const ACCENT = {keep:'#d8a836', studio:'#c8443a', frost:'#a9d6ea', museum:'#7fa6db'};
+let levelIdx = 0;
+let moves = '';
+let dives = '';
+let pastDelay = 2;
+let states = [];
+let filter = 'all';
+let online = null; // {code, seat, chan, presence}
+const journal = {pages:[], labels:{}, spread:0, busy:false};
+const hot = window.claude && window.claude.hot;
+
+function current(){ return states[states.length-1]; }
+function isSeat(s){ return !online || online.seat===s; }
+function cineOpen(){ return !$('cine').hidden; }
+function canMove(){ return !cineOpen() && current().status==='playing' && isSeat('present'); }
+function canDive(){ return current().status==='playing' && isSeat('future'); }
+function cap(s){ return s[0].toUpperCase()+s.slice(1); }
+
+/* ===== Progress (this browser only) ===== */
+function loadCleared(){ try { return JSON.parse(localStorage.getItem('hk-cleared') || '[]'); } catch(e){ return []; } }
+function markCleared(id){
+  try {
+    const c = new Set(loadCleared());
+    if (c.has(id)) return;
+    c.add(id); localStorage.setItem('hk-cleared', JSON.stringify([...c]));
+    buildLevelCards();
+  } catch(e){}
+}
+
+/* ===== Chapter + level picker ===== */
+function buildLevelCards(){
+  const cleared = new Set(loadCleared());
+  $('levels').innerHTML = CHAPTERS.map((c,ci) => {
+    const pips = LEVELS.map((L,i) => [L,i]).filter(([L]) => L.ci===ci).map(([L,i]) =>
+      '<button type="button" class="pip" data-level="'+i+'" aria-pressed="'+(i===levelIdx)+'">'+L.code+' '+L.name+
+      (cleared.has(L.id) ? ' <span class="ok" aria-label="cleared">✓</span>' : '')+'</button>').join('');
+    return '<div class="chap'+(LV.ci===ci?' on':'')+'">' +
+      '<span class="sw" style="background:'+ACCENT[c.scene]+'">'+c.num+'</span>' +
+      '<span class="nm">'+c.name+'</span>' +
+      '<span class="tags">'+c.tags.map(t => '<span>'+t+'</span>').join('')+'</span>' +
+      '<div class="pips">'+pips+'</div></div>';
+  }).join('');
+  const locked = !!online && online.seat!=='present';
+  document.querySelectorAll('.pip').forEach(b => { b.disabled = locked; if (locked) b.title = 'Only the Present player picks the level'; });
+}
+let armedLevel = null, armTimer = null;
+$('levels').addEventListener('click', e => {
+  const b = e.target.closest('.pip'); if (!b || b.disabled) return;
+  const i = +b.dataset.level;
+  if (i===levelIdx && !moves) return;
+  const inProgress = moves.length>0 && current().status==='playing';
+  if (inProgress && armedLevel!==i){
+    disarm();
+    armedLevel = i; b.classList.add('armed'); b.dataset.label = b.innerHTML; b.textContent = 'Leave this run?';
+    armTimer = setTimeout(disarm, 2500);
+    return;
+  }
+  disarm();
+  setLevel(i, true);
+});
+function disarm(){
+  clearTimeout(armTimer); armedLevel = null;
+  document.querySelectorAll('.pip.armed').forEach(b => { b.classList.remove('armed'); if (b.dataset.label) b.innerHTML = b.dataset.label; });
+}
+
+/* ===== Per-level UI ===== */
+function buildLevelUI(){
+  $('briefName').textContent = 'Level '+LV.code+' · '+LV.name;
+  $('briefScene').textContent = 'Chapter '+LV.num+' · '+LV.chapter.name+'. '+LV.tagline;
+  $('briefList').innerHTML = LV.brief.map(b => '<li>'+b+'</li>').join('');
+  $('brief').style.borderLeftColor = ACCENT[LV.scene];
+  $('prophecy').innerHTML = LV.prophecy.map(p => '<li>'+p+'</li>').join('');
+  const lg = [];
+  const firstTimed = Object.values(LV.doors).find(d => d.kind==='timed');
+  if (firstTimed) lg.push('<span><i class="blk open" style="background:'+firstTimed.color+';border-color:'+firstTimed.color+'"></i>open</span><span><i class="blk"></i>shut</span>');
+  if (LV.hazards.length) lg.push('<span><i class="blk spike">'+LV.hazards[0].sym+'</i>'+LV.hazards[0].name.toLowerCase()+' on</span>');
+  if (LV.collapses.length) lg.push('<span><i class="blk hold"></i>holds</span><span><i class="blk gone">✕</i>gone</span>');
+  if (LV.guards.length) lg.push('<span><i class="blk zone">NW</i>guard zone</span><span><i class="blk zone fz">NW</i>looking away</span>');
+  $('legend').innerHTML = lg.join('');
+  $('albumBox').hidden = !LV.photos.length;
+  $('mirrorBtn').hidden = !LV.shardCharges;
+  $('shardChip').hidden = !LV.shardCharges;
+  buildJournal();
+  buildLevelCards();
+}
+
+/* ===== Journal ===== */
+function shuffle(a){ for (let i=a.length-1;i>0;i--){ const j = Math.floor(Math.random()*(i+1)); [a[i],a[j]] = [a[j],a[i]]; } return a; }
+function buildJournal(){
+  const n = LV.photos.length;
+  const photos = LV.photos.map((p,i) => ({type:'photo', i}));
+  const notes = shuffle((LV.fillers||[]).slice()).slice(0, Math.max(2, Math.ceil(n*0.8))).map(t => ({type:'note', text:t}));
+  const pages = [{type:'cover'}].concat(shuffle(photos.concat(notes)));
+  if (pages.length % 2) pages.push({type:'blank'});
+  journal.pages = pages; journal.spread = 0; journal.labels = {};
+  let k = 0;
+  pages.forEach(pg => { if (pg.type==='photo') journal.labels[pg.i] = 'Photo '+'ABCDEFGH'[k++]; });
+  const lj = document.querySelector('.leaf'); if (lj) lj.remove();
+  journal.busy = false;
+}
+const DOODLE = '<svg class="doodle" width="34" height="44" viewBox="0 0 17 22" aria-hidden="true"><path d="M2 1h13M2 21h13M3 1c0 6 5 7 5 10s-5 4-5 10M14 1c0 6-5 7-5 10s5 4 5 10" fill="none" stroke="#6b5442" stroke-width="1.2"/><path d="M5 18c1-2 2-3 3.5-3.5S12 16 12 18z" fill="#b08a5a"/></svg>';
+function pageHTML(pg, no){
+  let h = '';
+  if (pg.type==='cover'){
+    h = '<h4>Future\'s Journal</h4><p class="hand">'+LV.name+'</p>' +
+      '<p class="hand small">'+LV.photos.length+' photos are tucked in here, in no particular order. Each was taken from one spot, marked by the brackets.</p>' +
+      '<p class="hand small">When the hero stands on that spot, dive in. Guess wrong and I lose focus.</p>' + DOODLE;
+  } else if (pg.type==='note'){
+    h = '<p class="note-text">'+pg.text+'</p>' + DOODLE;
+  } else if (pg.type==='photo'){
+    const p = LV.photos[pg.i];
+    h = '<figure class="polaroid'+(no%2?' tilt':'')+'"><div class="pw"><canvas data-photo="'+pg.i+'" aria-label="'+journal.labels[pg.i]+'"></canvas></div>' +
+      '<figcaption class="cap">'+journal.labels[pg.i]+'</figcaption></figure>' +
+      '<p class="hand small">'+p.note+'</p>' +
+      '<button type="button" class="dive" data-dive="'+pg.i+'">Dive in</button>';
+  }
+  return h + '<span class="pno">'+(no+1)+'</span>';
+}
+function fillPage(el, idx, st){
+  const pg = journal.pages[idx];
+  el.innerHTML = pg ? pageHTML(pg, idx) : '';
+  el.querySelectorAll('canvas[data-photo]').forEach(cv => drawPhoto(cv, cv.parentElement, LV.photos[+cv.dataset.photo]));
+  updateDiveButtons(el, st);
+}
+function updateDiveButtons(root, st){
+  const allow = canDive() && st.focus>0;
+  root.querySelectorAll('[data-dive]').forEach(b => {
+    const i = +b.dataset.dive, used = st.used.includes(i);
+    b.disabled = used || !allow;
+    b.textContent = used ? 'Used' : (st.focus<=0 ? 'Out of focus' : (isSeat('future') ? 'Dive in' : 'Future only'));
+    const page = b.closest('.page');
+    const stamp = page && page.querySelector('.stamp');
+    if (used && page && !stamp) page.insertAdjacentHTML('beforeend','<span class="stamp">USED</span>');
+    if (!used && stamp) stamp.remove();
+  });
+}
+function renderJournalPages(st){
+  if (journal.busy || !LV.photos.length) return;
+  fillPage($('pageL'), journal.spread*2, st);
+  fillPage($('pageR'), journal.spread*2+1, st);
+  const total = journal.pages.length;
+  $('pgInfo').textContent = 'Pages '+(journal.spread*2+1)+'–'+(journal.spread*2+2)+' of '+total;
+  $('pgPrev').disabled = journal.spread===0;
+  $('pgNext').disabled = journal.spread>=total/2-1;
+}
+function flip(dir){
+  const total = journal.pages.length/2, next = journal.spread+dir;
+  if (journal.busy || next<0 || next>=total) return;
+  const st = current(), old = journal.spread;
+  journal.spread = next;
+  let reduce = false; try { reduce = matchMedia('(prefers-reduced-motion: reduce)').matches; } catch(e){}
+  if (reduce){ renderJournalPages(st); return; }
+  journal.busy = true;
+  $('pgPrev').disabled = true; $('pgNext').disabled = true;
+  $('pgInfo').textContent = 'Pages '+(next*2+1)+'–'+(next*2+2)+' of '+journal.pages.length;
+  const leaf = document.createElement('div'); leaf.className = 'leaf';
+  const front = document.createElement('div'); front.className = 'face front';
+  const back = document.createElement('div'); back.className = 'face back';
+  const fp = document.createElement('div'), bp = document.createElement('div');
+  fp.className = 'page '+(dir>0?'right':'left'); bp.className = 'page '+(dir>0?'left':'right');
+  front.appendChild(fp); back.appendChild(bp); leaf.append(front, back);
+  leaf.style.left = dir>0 ? '50%' : '0';
+  leaf.style.transformOrigin = dir>0 ? 'left center' : 'right center';
+  $('book').appendChild(leaf);
+  if (dir>0){ fillPage(fp, old*2+1, st); fillPage(bp, next*2, st); fillPage($('pageR'), next*2+1, st); }
+  else { fillPage(fp, old*2, st); fillPage(bp, next*2+1, st); fillPage($('pageL'), next*2, st); }
+  void leaf.offsetWidth; // commit the start position so the turn animates
+  leaf.style.transform = 'rotateY('+(dir>0?-180:180)+'deg)';
+  let finished = false;
+  const done = () => { if (finished) return; finished = true; leaf.remove(); journal.busy = false; renderJournalPages(current()); };
+  leaf.addEventListener('transitionend', done, {once:true});
+  setTimeout(done, 1500);
+}
+$('pgNext').addEventListener('click', () => flip(1));
+$('pgPrev').addEventListener('click', () => flip(-1));
+$('book').addEventListener('click', e => { const b = e.target.closest('[data-dive]'); if (b && !b.disabled) dive(+b.dataset.dive); });
+
+/* ===== Render ===== */
+function underText(st){
+  const c = ch(st.x,st.y), k = K(st.x,st.y);
+  if (st.planks.includes(k)) return 'You are standing on a plank.';
+  if (st.filled.includes(k)) return 'You are standing on a filled-in hole.';
+  if (c==='=') return 'You are on a wooden bridge.';
+  if (c==='*') return 'You are standing on slick ice.';
+  if (c==='%') return 'The ice under you creaks. It is thin here.';
+  if (c==='p') return 'You are standing on a floor plate.';
+  const r = roomAt(st.x,st.y);
+  return r ? 'The floor here is '+r.word+'.' : '';
+}
+
+function render(){
+  states = simulate(moves, dives);
+  const cur = current();
+  const ended = cur.status!=='playing';
+  const past = ended ? cur : states[Math.max(0, cur.t - pastDelay)];
+  if (cur.status==='won') markCleared(LV.id);
+
+  // Past
+  $('pastTurn').textContent = past.t;
+  $('delayVal').textContent = pastDelay;
+  const canTune = isSeat('past');
+  $('delayDown').disabled = !canTune || pastDelay<=1;
+  $('delayUp').disabled = !canTune || pastDelay>=6;
+  document.querySelector('.seat-past .seat-rule').textContent = 'Sees the whole map, but '+pastDelay+' turn'+(pastDelay===1?'':'s')+' late.';
+  drawFullMap($('pastCanvas'), $('pastWrap'), past);
+  const entries = past.log.filter(e => e.t <= past.t).slice(-6).reverse();
+  $('pastLog').innerHTML = entries.length
+    ? entries.map(e => '<li class="'+e.kind+'"><span class="lt">T'+e.t+'</span><span>'+e.text+'</span></li>').join('')
+    : '<li class="empty">Nothing yet.</li>';
+
+  // Present
+  $('turnNow').textContent = cur.t;
+  $('hearts').innerHTML = [0,1,2].map(i => '<i class="heart'+(i<cur.hearts?'':' off')+'"></i>').join('');
+  $('hearts').setAttribute('aria-label', cur.hearts+' of 3 hearts');
+  const kl = LV.keyLabel || 'Key';
+  const kc = $('keyChip'); kc.textContent = cur.key ? kl+' in hand' : 'No '+kl.toLowerCase(); kc.classList.toggle('has', cur.key);
+  const sc = $('shardChip'); sc.textContent = 'Shards '+cur.shards; sc.classList.toggle('has', cur.shards>0);
+  $('presentMsg').innerHTML = (cur.msg ? cur.msg+' ' : '') + '<span class="floor">'+underText(cur)+'</span>';
+  drawLocalView($('presentCanvas'), $('presentWrap'), cur, 380);
+  const allow = canMove();
+  document.querySelectorAll('#dpad button').forEach(b => { b.disabled = !allow; });
+  $('mirrorBtn').disabled = !allow || cur.shards<=0;
+  const presentLocked = !isSeat('present');
+  $('presentLocked').hidden = !presentLocked;
+  $('presentHint').hidden = presentLocked;
+  $('presentHint').textContent = 'Arrow keys or WASD to move. Space to wait.' + (LV.shardCharges ? ' M raises a mirror shard.' : '');
+
+  // Future
+  renderFuture(cur);
+
+  // Banner
+  const bn = $('banner');
+  bn.hidden = !ended;
+  bn.className = 'banner '+(ended ? cur.status : '');
+  if (ended){
+    const won = cur.status==='won';
+    $('bannerTitle').textContent = won ? 'Level '+LV.code+' cleared on turn '+cur.t : 'The run is over';
+    $('bannerText').textContent = won
+      ? 'With '+cur.hearts+' heart'+(cur.hearts===1?'':'s')+' left. Swap seats and try to beat it.'
+      : cur.msg;
+    $('bannerRestart').hidden = !isSeat('present');
+    const nxt = LEVELS[levelIdx+1];
+    $('bannerNext').hidden = !won || !nxt || !isSeat('present');
+    if (nxt) $('bannerNext').textContent = nxt.ci===LV.ci ? 'Next level' : 'Next chapter';
+  }
+  $('restartBtn').disabled = !isSeat('present');
+}
+
+function renderFuture(st){
+  const now = st.t, ended = st.status!=='playing';
+  $('futureTurn').textContent = now;
+  const left = LV.doom - now;
+  $('doom').innerHTML = !ended ? LV.doomName+' arrives in <b>'+left+'</b> turn'+(left===1?'':'s') : 'The run is over.';
+
+  const mirror = !ended && now <= st.mirrorUntil;
+  $('mirrorBox').hidden = !mirror;
+  if (mirror){
+    const n = st.mirrorUntil - now;
+    $('mirrorLabel').textContent = n>0 ? 'Mirror · you can see the present for '+n+' more turn'+(n===1?'':'s') : 'Mirror · last turn of sight';
+    drawLocalView($('mirrorCanvas'), $('mirrorWrap'), st, 240);
+  }
+
+  const turns = [];
+  for (let k=1;k<=WINDOW;k++) turns.push(now+k);
+  let html = '<thead><tr><th class="rowh" scope="col">Turn</th>' + turns.map(t => '<th scope="col">'+t+'</th>').join('') + '</tr></thead><tbody>';
+  const cell = (cls,sym,tip,style) => '<td><span class="blk '+cls+'" title="'+tip+'"'+(style?' style="'+style+'"':'')+'>'+sym+'</span></td>';
+  for (const [id,d] of Object.entries(LV.doors)){
+    if (d.kind!=='timed') continue;
+    html += '<tr><th class="rowh" scope="row">'+d.name+'<small>'+d.sub+'</small></th>';
+    for (const t of turns){
+      if (t>LV.doom){ html += cell('gone','','Too late'); continue; }
+      const o = doorOpen(id,t,null);
+      html += o ? cell('open','',d.name+' open on turn '+t,'background:'+d.color+';border-color:'+d.color) : cell('','',d.name+' shut on turn '+t);
+    }
+    html += '</tr>';
+  }
+  for (const hz of LV.hazards){
+    html += '<tr><th class="rowh" scope="row">'+hz.name+'<small>'+hz.sub+'</small></th>';
+    for (const t of turns){
+      if (t>LV.doom){ html += cell('gone','','Too late'); continue; }
+      const u = hazardUp(hz,t);
+      html += u ? cell('spike',hz.sym,hz.name+' on at turn '+t) : cell('','',hz.name+' off at turn '+t);
+    }
+    html += '</tr>';
+  }
+  for (const c of LV.collapses){
+    html += '<tr><th class="rowh" scope="row">'+c.name+'<small>'+c.sub+'</small></th>';
+    for (const t of turns){
+      const gone = t>=c.at;
+      html += gone ? cell('gone','✕',c.name+' gone by turn '+t) : cell('hold','',c.name+' holds on turn '+t);
+    }
+    html += '</tr>';
+  }
+  for (const g of LV.guards){
+    html += '<tr><th class="rowh" scope="row">'+g.name+'<small>'+(g.sub || 'Patrol zone')+'</small></th>';
+    let gs = st.gsteps;
+    for (const t of turns){
+      const fz = t <= st.freezeUntil;
+      if (!fz) gs++;
+      const [gx,gy] = guardPos(g,gs), z = guardZone(g,gx,gy);
+      html += cell('zone'+(fz?' fz':''), z, g.name+(fz?' looking away':'')+' in zone '+z+' on turn '+t);
+    }
+    html += '</tr>';
+  }
+  html += '<tr><th class="rowh" scope="row">'+LV.doomName+'<small>Time limit</small></th>';
+  for (const t of turns){
+    const fall = t>=LV.doom;
+    html += fall ? cell('fall','✕',LV.doomName+' on turn '+t) : cell('','','Still safe on turn '+t);
+  }
+  html += '</tr></tbody>';
+  $('timeline').innerHTML = html;
+
+  const ev = [];
+  for (const t of turns){
+    if (t > LV.doom) break;
+    for (const [id,d] of Object.entries(LV.doors)){
+      if (d.kind!=='timed') continue;
+      const a = doorOpen(id,t-1,null), b = doorOpen(id,t,null);
+      if (b && !a) ev.push([t,'The '+d.name+' will open.']);
+      if (a && !b) ev.push([t,'The '+d.name+' will shut.']);
+    }
+    for (const c of LV.collapses) if (t===c.at) ev.push([t,'The '+c.name.toLowerCase()+' will give way.']);
+    if (LV.guards.length && t===st.freezeUntil+1 && st.freezeUntil>=now) ev.push([t,'The guards will stop looking away.']);
+    if (t===LV.doom) ev.push([t, LV.doomName+' will arrive.']);
+  }
+  $('upcoming').innerHTML = ended
+    ? '<li class="quiet">No more future. The run has ended.</li>'
+    : ev.length ? ev.map(([t,s]) => '<li><span class="lt">Turn '+t+'</span><span>'+s+'</span></li>').join('')
+    : '<li class="quiet">No doors or collapses change in the next '+WINDOW+' turns.</li>';
+
+  if (LV.photos.length){
+    $('focus').innerHTML = 'Focus ' + Array.from({length:LV.focus}, (_,i) => '<i class="'+(i<st.focus?'':'off')+'"></i>').join('');
+    const dr = $('diveResult');
+    if (st.lastDive){
+      const lbl = journal.labels[st.lastDive.idx] || 'the photo';
+      dr.textContent = st.lastDive.text.replace('{photo}', lbl).replace('{Photo}', cap(lbl));
+      dr.classList.toggle('bad', !st.lastDive.ok);
+    } else {
+      dr.textContent = 'Flip through the journal to find the right photo. Dive in only when the hero stands where it was taken.';
+      dr.classList.remove('bad');
+    }
+    if (!journal.busy) renderJournalPages(st);
+  }
+}
+
+/* ===== Actions ===== */
+function act(a){
+  if (!canMove()) return;
+  if (a==='V' && current().shards<=0) return;
+  moves += a;
+  render();
+  if (online) pushRow({moves});
+}
+function dive(i){
+  if (!canDive()) return;
+  const cur = current();
+  if (cur.used.includes(i) || cur.focus<=0) return;
+  dives += (dives ? ';' : '') + cur.t + ':' + i;
+  render();
+  if (online) pushRow({dives});
+}
+function setLevel(i, push){
+  levelIdx = Math.max(0, Math.min(LEVELS.length-1, i|0));
+  LV = LEVELS[levelIdx];
+  moves = ''; dives = '';
+  buildLevelUI();
+  render();
+  if (online && push) pushRow({level:levelIdx, moves:'', dives:''});
+}
+function restart(){
+  if (!isSeat('present')) return;
+  moves = ''; dives = ''; buildJournal(); render();
+  if (online) pushRow({moves:'', dives:''});
+}
+function setDelay(d){
+  if (!isSeat('past')) return;
+  pastDelay = Math.max(1, Math.min(6, d));
+  render();
+  if (online) pushRow({delay:pastDelay});
+}
+$('delayDown').addEventListener('click', () => setDelay(pastDelay-1));
+$('delayUp').addEventListener('click', () => setDelay(pastDelay+1));
+
+/* ===== Seat filter ===== */
+function applyFilter(){
+  const seats = $('seats');
+  document.querySelectorAll('.seat').forEach(s => { s.hidden = !(filter==='all' || s.dataset.seat===filter); });
+  seats.classList.toggle('single', filter!=='all');
+  document.querySelectorAll('#seatFilter button').forEach(b => b.setAttribute('aria-pressed', String(b.dataset.seat===filter)));
+  $('seatFilter').hidden = !!online;
+  renderModeBar();
+  buildLevelCards();
+  render();
+}
+function renderModeBar(){
+  const mb = $('modeBar');
+  if (online){
+    mb.style.borderLeftColor = online.seat ? 'var(--'+online.seat+')' : 'var(--line)';
+    mb.innerHTML = '<span><b>Online</b> in room <b>'+online.code+'</b>.</span><span>You only see your own seat. Talk to the others out loud or over voice chat.</span>';
+  } else {
+    mb.style.borderLeftColor = 'var(--present)';
+    mb.innerHTML = filter==='all'
+      ? '<span><b>Local test.</b> All three seats are on one screen so you can see how the pieces fit.</span><span>Pick a single seat above to feel what one player sees.</span>'
+      : '<span><b>Local test.</b> Showing only the '+cap(filter)+' seat.</span><span>Arrow keys still move the hero.</span>';
+  }
+}
+$('seatFilter').addEventListener('click', e => {
+  const b = e.target.closest('button[data-seat]'); if (!b) return;
+  filter = b.dataset.seat; applyFilter();
+});
+
+/* ===== Controls ===== */
+$('dpad').addEventListener('click', e => { const b = e.target.closest('button[data-move]'); if (b) act(b.dataset.move); });
+$('mirrorBtn').addEventListener('click', () => act('V'));
+const KEYS = {ArrowUp:'U',ArrowDown:'D',ArrowLeft:'L',ArrowRight:'R',w:'U',s:'D',a:'L',d:'R',W:'U',S:'D',A:'L',D:'R',' ':'W',m:'V',M:'V'};
+document.addEventListener('keydown', e => {
+  if (cineOpen()) return;
+  if (e.target.closest && e.target.closest('input,textarea,select')) return;
+  if (e.target.closest && e.target.closest('button') && (e.key===' ' || e.key==='Enter')) return;
+  if (e.metaKey || e.ctrlKey || e.altKey) return;
+  const a = KEYS[e.key]; if (!a) return;
+  if (!canMove()) return;
+  e.preventDefault(); act(a);
+});
+let restartArmed = null;
+$('restartBtn').addEventListener('click', () => {
+  const b = $('restartBtn');
+  if (current().status!=='playing' || moves.length===0){ restart(); return; }
+  if (restartArmed){ clearTimeout(restartArmed); restartArmed=null; b.textContent='Restart'; b.classList.remove('warn'); restart(); return; }
+  b.textContent = 'Click again'; b.classList.add('warn');
+  restartArmed = setTimeout(() => { restartArmed=null; b.textContent='Restart'; b.classList.remove('warn'); }, 2500);
+});
+$('bannerRestart').addEventListener('click', restart);
+$('bannerNext').addEventListener('click', () => { if (isSeat('present')) setLevel(levelIdx+1, true); });
+
+/* ===== Cinematic seat picker ===== */
+const SEATS = {
+  past:{role:'Sees the whole map, a few turns too late.', words:['was','did']},
+  present:{role:'Moves the hero. Sees one step around.', words:['is','am']},
+  future:{role:'Knows what is coming. Never sees the map.', words:['will','shall']}
+};
+function glyph(seat){
+  // a pixel hourglass: sand at the bottom (past), falling (present), still on top (future)
+  const top = seat==='future' ? '<rect x="5" y="4" width="8" height="3"/><rect x="6" y="7" width="6" height="2"/>' : seat==='present' ? '<rect x="7" y="6" width="4" height="2"/><rect x="8" y="8" width="2" height="2"/>' : '';
+  const stream = seat==='present' ? '<rect x="8.5" y="10" width="1" height="5"/>' : '';
+  const bottom = seat==='past' ? '<rect x="6" y="13" width="6" height="2"/><rect x="5" y="15" width="8" height="3"/>' : seat==='present' ? '<rect x="6" y="15" width="6" height="3"/>' : '';
+  return '<svg width="54" height="60" viewBox="0 0 18 20" aria-hidden="true" shape-rendering="crispEdges">' +
+    '<g fill="#3a74ff"><rect x="2" y="1" width="14" height="2"/><rect x="2" y="18" width="14" height="1"/></g>' +
+    '<g fill="none" stroke="#3a74ff" stroke-width="1"><path d="M4 3h10v3l-4 4 4 4v4H4v-4l4-4-4-4z"/></g>' +
+    '<g fill="#e9eeff">'+top+stream+bottom+'</g></svg>';
+}
+let cineCtx = null;
+function openCine(opts){
+  cineCtx = opts;
+  $('cineRoom').textContent = opts.roomLabel || '';
+  const t = 'Who are you';
+  $('cineTitle').innerHTML = [...t].map((c,i) => '<span class="ch" style="animation-delay:'+(0.5+i*0.09).toFixed(2)+'s">'+(c===' '?'&nbsp;':c)+'</span>').join('') +
+    [0,1,2].map(i => '<span class="dot" style="animation-delay:'+(0.5+t.length*0.09+0.25+i*0.28).toFixed(2)+'s, '+(2.8+i*0.2).toFixed(2)+'s">.</span>').join('');
+  $('cineCards').innerHTML = ['past','present','future'].map(s =>
+    '<div class="cine-slot"><button type="button" class="cine-card" data-seat="'+s+'" aria-label="'+cap(s)+': '+SEATS[s].role+'">' +
+      '<span class="sheet back b1">'+SEATS[s].words[0]+'</span>' +
+      '<span class="sheet back b2">'+SEATS[s].words[1]+'</span>' +
+      '<span class="sheet front">'+glyph(s)+'<span class="nm">'+cap(s)+'</span><span class="role">'+SEATS[s].role+'</span></span>' +
+    '</button></div>').join('');
+  let foot = '';
+  if (opts.invite) foot += '<div class="cine-invite"><input id="cineInviteLink" readonly value="'+opts.invite+'" aria-label="Invite link"><button type="button" class="btn" id="cineCopy">Copy invite</button></div>';
+  if (opts.allowAll) foot += '<button type="button" class="linkish" id="cineAll">Testing alone? Show all three seats</button>';
+  $('cineFoot').innerHTML = foot;
+  $('cine').classList.remove('leaving');
+  $('cine').hidden = false;
+  updateCineTaken(opts.taken || {});
+}
+function updateCineTaken(taken){
+  document.querySelectorAll('.cine-card').forEach(b => {
+    const t = !!taken[b.dataset.seat];
+    b.disabled = t;
+    const tag = b.querySelector('.taken');
+    if (t && !tag) b.insertAdjacentHTML('beforeend','<span class="taken">Taken</span>');
+    if (!t && tag) tag.remove();
+  });
+}
+function closeCine(){
+  const el = $('cine');
+  el.classList.add('leaving');
+  setTimeout(() => { el.hidden = true; el.classList.remove('leaving'); render(); }, 600);
+}
+$('cine').addEventListener('click', e => {
+  const card = e.target.closest('.cine-card');
+  if (card && !card.disabled && cineCtx){ cineCtx.onPick(card.dataset.seat); return; }
+  if (e.target.closest('#cineAll') && cineCtx && cineCtx.onAll){ cineCtx.onAll(); return; }
+  if (e.target.closest('#cineCopy')) copyText($('cineInviteLink'), $('cineCopy'));
+});
+function copyText(input, btn){
+  const done = () => { const old = btn.textContent; btn.textContent = 'Copied'; setTimeout(() => { btn.textContent = old; }, 1500); };
+  try {
+    navigator.clipboard.writeText(input.value).then(done, () => { input.focus(); input.select(); });
+  } catch(e){ input.focus(); input.select(); }
+}
+function openLocalCine(){
+  openCine({
+    roomLabel:'Local test · one screen',
+    allowAll:true,
+    onPick: seat => { filter = seat; closeCine(); applyFilter(); },
+    onAll: () => { filter = 'all'; closeCine(); applyFilter(); }
+  });
+}
+
+/* ===== Online (Supabase) ===== */
+const configured = !!(SUPABASE_URL && SUPABASE_ANON_KEY);
+let sb = null, pend = null, sending = false;
+const clientId = Math.random().toString(36).slice(2,10);
+$('onlineNote').innerHTML = configured
+  ? 'Create a room and send the invite link. Everyone who opens it picks who they are. Present picks the level.'
+  : 'Online play needs your Supabase project. Put your project URL and anon key into <code>SUPABASE_URL</code> and <code>SUPABASE_ANON_KEY</code> at the top of the script in <code>index.html</code>, run <code>supabase.sql</code> once, and host the page on GitHub Pages. This preview only runs the local test.';
+$('createBtn').disabled = !configured; $('joinBtn').disabled = !configured; $('codeInput').disabled = !configured;
+$('onlineBtn').addEventListener('click', () => {
+  const p = $('onlinePanel'); p.hidden = !p.hidden; $('onlineBtn').setAttribute('aria-expanded', String(!p.hidden));
+});
+function setErr(m){ $('onlineErr').textContent = m || ''; const l = $('liveErr'); if (l) l.textContent = m || ''; }
+function inviteUrl(code){ return location.href.split('#')[0] + '#room-' + code; }
+function loadLib(){
+  if (window.supabase && window.supabase.createClient) return Promise.resolve();
+  return new Promise((res,rej) => {
+    const s = document.createElement('script');
+    s.src = 'https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.min.js';
+    s.onload = res; s.onerror = () => rej(new Error('Could not load the Supabase library. Check your connection and try again.'));
+    document.head.appendChild(s);
+  });
+}
+async function client(){ if (!sb){ await loadLib(); sb = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY); } return sb; }
+function newCode(){ const A='ABCDEFGHJKLMNPQRSTUVWXYZ'; let c=''; for (let i=0;i<4;i++) c += A[Math.floor(Math.random()*A.length)]; return c; }
+$('createBtn').addEventListener('click', async () => {
+  setErr('');
+  try {
+    const c = await client();
+    let code = newCode(), tries = 0, error = null;
+    const row = {level:levelIdx, moves:'', dives:'', delay:pastDelay};
+    do {
+      ({error} = await c.from(TABLE).insert(Object.assign({code}, row)));
+      if (error && error.code==='23505'){ code = newCode(); tries++; } else break;
+    } while (tries<5);
+    if (error) throw new Error('Could not create a room: '+error.message);
+    openRoom(code, row);
+  } catch(err){ setErr(err.message); }
+});
+async function joinCode(code){
+  setErr('');
+  if (!/^[A-Z]{4}$/.test(code)){ setErr('Room codes are 4 letters.'); return; }
+  try {
+    const c = await client();
+    const {data,error} = await c.from(TABLE).select('level,moves,dives,delay').eq('code',code).maybeSingle();
+    if (error) throw new Error('Could not reach the room: '+error.message);
+    if (!data) throw new Error('No room uses the code '+code+'. Check the letters with the host.');
+    openRoom(code, data);
+  } catch(err){
+    setErr(err.message);
+    $('onlinePanel').hidden = false;
+  }
+}
+$('joinBtn').addEventListener('click', () => joinCode($('codeInput').value.trim().toUpperCase()));
+$('codeInput').addEventListener('keydown', e => { if (e.key==='Enter') $('joinBtn').click(); });
+
+function takenByOthers(){
+  const taken = {};
+  if (!online || !online.presence) return taken;
+  for (const [key, metas] of Object.entries(online.presence)){
+    if (key===clientId) continue;
+    metas.forEach(m => { if (m.seat) taken[m.seat] = true; });
+  }
+  return taken;
+}
+function openRoom(code, row){
+  online = {code, seat:null, chan:null, presence:{}};
+  levelIdx = row.level|0; LV = LEVELS[levelIdx];
+  moves = row.moves || ''; dives = row.dives || '';
+  if (row.delay) pastDelay = row.delay|0;
+  buildLevelUI();
+  try { history.replaceState(null, '', '#room-'+code); } catch(e){}
+  $('onlinePanel').hidden = false;
+  $('onlineSetup').style.display = 'none'; $('onlineLive').hidden = false;
+  $('roomCode').textContent = code;
+  $('inviteLink').value = inviteUrl(code);
+  const chan = sb.channel('hourglass-'+code, {config:{presence:{key:clientId}}});
+  chan.on('postgres_changes', {event:'UPDATE', schema:'public', table:TABLE, filter:'code=eq.'+code}, p => onRemote(p.new || {}));
+  chan.on('presence', {event:'sync'}, () => {
+    online.presence = chan.presenceState();
+    renderPresence();
+    if (cineOpen()) updateCineTaken(takenByOthers());
+  });
+  chan.subscribe();
+  online.chan = chan;
+  showRoomCine();
+}
+function showRoomCine(){
+  openCine({
+    roomLabel:'Room '+online.code,
+    invite: inviteUrl(online.code),
+    taken: takenByOthers(),
+    onPick: seat => {
+      if (takenByOthers()[seat]) return;
+      online.seat = seat; filter = seat;
+      try { online.chan.track({seat}); } catch(e){}
+      $('mySeatLabel').textContent = cap(seat);
+      $('mySeatLabel').style.color = 'var(--'+seat+')';
+      closeCine(); applyFilter();
+    }
+  });
+}
+$('switchSeatBtn').addEventListener('click', () => { if (online) showRoomCine(); });
+$('copyInvite').addEventListener('click', () => copyText($('inviteLink'), $('copyInvite')));
+function onRemote(r){
+  if (!online) return;
+  const busy = sending || !!pend;
+  if (r.delay && !(online.seat==='past' && busy)) pastDelay = r.delay|0;
+  const lvl = r.level|0;
+  if (lvl !== levelIdx){
+    levelIdx = lvl; LV = LEVELS[lvl];
+    moves = r.moves || ''; dives = r.dives || '';
+    buildLevelUI(); render(); return;
+  }
+  const rm = r.moves || '', rd = r.dives || '';
+  const wasRun = !!(moves || dives);
+  let changed = false;
+  if (rm !== moves && !(online.seat==='present' && busy && moves.startsWith(rm))){ moves = rm; changed = true; }
+  if (rd !== dives && !(online.seat==='future' && busy && dives.startsWith(rd))){ dives = rd; changed = true; }
+  if (wasRun && !moves && !dives) buildJournal();
+  render();
+}
+function renderPresence(){
+  const taken = {past:0,present:0,future:0};
+  Object.values(online.presence || {}).forEach(arr => arr.forEach(m => { if (taken[m.seat]!==undefined) taken[m.seat]++; }));
+  $('presence').innerHTML = ['past','present','future'].map(s =>
+    '<span class="chip '+(taken[s]?'on-'+s:'off')+'">'+cap(s)+(taken[s]?' ●':' ○')+'</span>').join('');
+}
+function pushRow(fields){
+  pend = Object.assign(pend || {}, fields);
+  if (sending) return;
+  sending = true;
+  (async () => {
+    while (pend){
+      const f = pend; pend = null;
+      f.updated_at = new Date().toISOString();
+      const {error} = await sb.from(TABLE).update(f).eq('code', online.code);
+      if (error) setErr('Lost sync with the room: '+error.message);
+    }
+    sending = false;
+  })();
+}
+$('leaveBtn').addEventListener('click', async () => {
+  if (online && online.chan){ try { await sb.removeChannel(online.chan); } catch(e){} }
+  online = null; filter = 'all';
+  try { history.replaceState(null, '', location.href.split('#')[0]); } catch(e){}
+  $('onlineSetup').style.display = 'flex'; $('onlineLive').hidden = true;
+  setLevel(levelIdx, false);
+  applyFilter();
+});
+
+/* ===== Boot ===== */
+function start(data){
+  data = data || {};
+  const restoring = typeof data.moves==='string';
+  if (typeof data.level==='number'){ levelIdx = Math.max(0, Math.min(LEVELS.length-1, data.level)); LV = LEVELS[levelIdx]; }
+  if (restoring) moves = data.moves;
+  if (typeof data.dives==='string') dives = data.dives;
+  if (data.delay) pastDelay = data.delay;
+  if (data.filter) filter = data.filter;
+  buildLevelUI();
+  applyFilter();
+  const m = /^#room-([A-Za-z]{4})$/.exec(location.hash || '');
+  if (m && configured){ joinCode(m[1].toUpperCase()); return; }
+  if (m && !configured){ $('onlinePanel').hidden = false; setErr('This copy is not set up for online play yet, so the invite link cannot open a room.'); }
+  if (!restoring) openLocalCine();
+}
+if (hot && hot.snapshot) hot.snapshot(() => online ? {} : {level:levelIdx, moves, dives, filter, delay:pastDelay});
+let resizeRaf = 0;
+const ro = new ResizeObserver(() => { cancelAnimationFrame(resizeRaf); resizeRaf = requestAnimationFrame(() => { if (states.length) render(); }); });
+ro.observe($('pastWrap')); ro.observe($('presentWrap')); ro.observe($('book'));
+if (document.fonts && document.fonts.ready) document.fonts.ready.then(() => { if (states.length) render(); });
+if (hot && hot.ready) hot.ready(start); else start((hot && hot.data) || {});
+
+})();
+</script>
+</body>
+</html>
