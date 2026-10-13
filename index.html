@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<title>Hourglass Keep</title>
+<title>TimeLinked</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Atkinson+Hyperlegible:wght@400;700&family=Caveat:wght@500;700&family=JetBrains+Mono:wght@500;700&family=Silkscreen:wght@400;700&display=swap">
@@ -114,6 +114,7 @@ button{font:inherit;color:inherit}
 .seat-pick legend{font-size:13px;color:var(--muted);margin-bottom:6px;padding:0}
 .seat-pick label{display:inline-flex;gap:6px;align-items:center;border:2px solid var(--line);padding:6px 10px;cursor:pointer;font-family:var(--display);font-size:12px}
 .seat-pick input{accent-color:var(--present)}
+.code-input.nick{text-transform:none;letter-spacing:.02em;width:12em}
 .code-input{font-family:var(--mono);font-size:16px;letter-spacing:.2em;text-transform:uppercase;width:7.5em;background:var(--bg);color:var(--text);border:2px solid var(--line);padding:7px 10px}
 .err{color:var(--danger);font-size:14px;min-height:1.2em;margin:0}
 .note{font-size:14px;color:var(--muted)}
@@ -307,10 +308,37 @@ button{font:inherit;color:inherit}
 .cine-card:focus-visible{outline:none}
 .cine-card:focus-visible .front{outline:2px solid #e9eeff;outline-offset:4px}
 .cine-card[disabled]{cursor:not-allowed}
+.cine-card[disabled]:hover .sheet.b1{transform:rotate(-2deg)}
+.cine-card[disabled]:hover .sheet.b2{transform:rotate(2deg)}
+.cine-card[disabled]:hover .front{transform:none;box-shadow:none}
 .cine-card[disabled] .sheet{border-color:#26314f}
 .cine-card[disabled] .front{opacity:.55}
-.cine-card .taken{position:absolute;bottom:16px;left:50%;transform:translateX(-50%);font-family:var(--display);font-size:11px;color:var(--danger);border:2px solid var(--danger);padding:2px 8px;background:#000}
-.cine-foot{margin:0;display:flex;flex-direction:column;align-items:center;gap:10px;opacity:0;animation:cineFade .8s ease 3s forwards;max-width:100%}
+.cine-card .tag{position:absolute;bottom:-12px;left:50%;transform:translateX(-50%);font-family:var(--display);font-size:11px;padding:3px 8px;background:#000;white-space:nowrap;max-width:140px;overflow:hidden;text-overflow:ellipsis;z-index:2}
+.cine-card .tag.taken{color:var(--danger);border:2px solid var(--danger)}
+.cine-card .tag.you{color:#e9eeff;border:2px solid var(--cine-blue);box-shadow:0 0 14px var(--cine-glow)}
+.cine-card.mine .front{border-color:#e9eeff;box-shadow:0 0 34px var(--cine-glow)}
+.cine-form{display:flex;flex-direction:column;align-items:center;gap:12px;width:min(100%,360px);opacity:0;animation:cineFade .7s ease 1.3s forwards}
+.cine-form label{font-family:var(--body);font-size:15px;color:#aab8e6}
+.cine-form input{width:100%;font-family:var(--display);font-size:20px;letter-spacing:.04em;text-align:center;background:#000;color:#e9eeff;border:2px solid var(--cine-blue);padding:10px 12px;box-shadow:inset 0 0 18px rgba(58,116,255,.18)}
+.cine-form input:focus{outline:none;box-shadow:0 0 0 3px rgba(58,116,255,.35),inset 0 0 18px rgba(58,116,255,.18)}
+.cine-form input::placeholder{color:#4a5a86}
+.cine-btn{font-family:var(--display);font-size:14px;letter-spacing:.06em;background:var(--cine-blue);color:#000;border:2px solid var(--cine-blue);padding:10px 20px;cursor:pointer;box-shadow:0 0 22px var(--cine-glow)}
+.cine-btn:hover{background:#5b8cff}
+.cine-btn[disabled]{opacity:.5;cursor:wait}
+.cine-btn.ghost{background:#000;color:#cfd9ff}
+.cine-err{margin:0;min-height:1.3em;color:#ff8a73;font-size:14px;text-align:center}
+.cine-players{list-style:none;margin:0;padding:0;display:flex;flex-wrap:wrap;justify-content:center;gap:12px;max-width:640px;opacity:0;animation:cineFade .6s ease 1s forwards}
+.cine-players li{display:flex;align-items:center;gap:8px;border:2px solid var(--cine-blue);background:#000;padding:10px 14px;box-shadow:0 0 16px rgba(58,116,255,.2);animation:cineDrift 6s ease-in-out infinite}
+.cine-players li:nth-child(2n){animation-duration:5.2s;animation-delay:-1.4s}
+.cine-players li:nth-child(3n){animation-duration:6.6s;animation-delay:-2.3s}
+.cine-players li.muted{border-color:#26314f;color:#6f7fae;animation:none}
+.cine-players .pname{font-family:var(--display);font-size:16px;color:#e9eeff}
+.cine-players .ptag{font-family:var(--mono);font-size:10.5px;letter-spacing:.08em;text-transform:uppercase;padding:1px 6px;border:1px solid #3a4a7a;color:#8ea7e8}
+.cine-players .ptag.host{border-color:var(--present);color:var(--present)}
+.cine-hint,.cine-status{margin:0;font-family:var(--body);font-size:14px;color:#aab8e6;text-align:center;max-width:46ch}
+.cine-status{font-size:15px;color:#cfd9ff}
+.cine-foot{margin:0;display:flex;flex-direction:column;align-items:center;gap:12px;opacity:0;animation:cineFade .8s ease 3s forwards;max-width:100%}
+.cine[data-stage="lobby"] .cine-foot,.cine[data-stage="name"] .cine-foot{animation-delay:1.4s}
 .linkish{background:none;border:0;padding:4px;color:#8ea7e8;font-family:var(--mono);font-size:12px;text-decoration:underline;text-underline-offset:3px;cursor:pointer}
 .cine-invite{display:flex;gap:8px;align-items:center;flex-wrap:wrap;justify-content:center;max-width:100%}
 .cine-invite input{width:min(70vw,380px);font-family:var(--mono);font-size:12px;background:#000;color:#cfd9ff;border:2px solid #26314f;padding:6px 8px}
@@ -320,7 +348,7 @@ button{font:inherit;color:inherit}
 @keyframes cineRise{from{opacity:0;transform:translateY(18px)}to{opacity:1;transform:none}}
 @keyframes cineDrift{0%{transform:translate(0,0) rotate(0)}25%{transform:translate(2px,-4px) rotate(.8deg)}50%{transform:translate(-1px,-6px) rotate(-.4deg)}75%{transform:translate(-3px,-2px) rotate(-.9deg)}100%{transform:translate(0,0) rotate(0)}}
 @media (prefers-reduced-motion: reduce){
-  .cine-slot,.cine-title .ch,.cine-title .dot,.cine-room,.cine-foot{animation:none!important;opacity:1!important}
+  .cine-slot,.cine-title .ch,.cine-title .dot,.cine-room,.cine-foot,.cine-form,.cine-players,.cine-players li{animation:none!important;opacity:1!important}
   .cine-card .sheet,.leaf{transition:none!important}
 }
 @media (prefers-reduced-motion: reduce){ .btn:active{transform:none} .photo{transform:none!important} }
@@ -330,8 +358,8 @@ button{font:inherit;color:inherit}
 <div class="app">
   <header class="top">
     <div>
-      <h1>Hour<span class="glass">glass</span> Keep</h1>
-      <p class="tag">One adventurer, three players, three moments in time. Past knows where. Future knows when. Present is the only one who can act.</p>
+      <h1>Time<span class="glass">Linked</span></h1>
+      <p class="tag">One adventurer, three players, three moments in time, linked. Past knows where. Future knows when. Present is the only one who can act.</p>
     </div>
     <div class="top-actions">
       <div class="seg" id="seatFilter" aria-label="Which seats to show">
@@ -351,6 +379,10 @@ button{font:inherit;color:inherit}
     <div id="onlineSetup" style="display:flex;flex-direction:column;gap:12px">
       <h2>Play online</h2>
       <p class="note" id="onlineNote"></p>
+      <div class="row">
+        <label for="nickInput" class="note">Nickname</label>
+        <input class="code-input nick" id="nickInput" maxlength="16" autocomplete="nickname" placeholder="Your name">
+      </div>
       <div class="row">
         <button type="button" class="btn primary" id="createBtn">Create room</button>
         <span class="note">or join one:</span>
@@ -489,7 +521,7 @@ button{font:inherit;color:inherit}
       <div><h3>Present</h3><p>The only one who can move. Sees one step in every direction and nothing else. Knows what is under their feet right now.</p></div>
       <div><h3>Future</h3><p>Knows when doors open, when hazards fire and where the guard will be. Keeps a journal of photos (shuffled every run) and the prophecy. Never sees the map unless Present raises a mirror shard.</p></div>
       <div><h3>Photographs</h3><p>Each photo shows the 3×3 view from one exact spot, with brackets marking the spot. Present describes what they see, Past names the room, and Future dives in when it matches. A wrong dive costs 1 focus.</p></div>
-      <div><h3>Playing together</h3><p>Click Play online, create a room and send the invite link. Everyone who opens it is asked who they are: Past, Present or Future. Past can choose how many turns behind they see.</p></div>
+      <div><h3>Playing together</h3><p>Click Play online, pick a nickname, create a room and send the invite link. Everyone gathers in the waiting room; when the host starts, everyone is asked who they are at the same moment. Past can choose how many turns behind they see.</p></div>
       <div><h3>House rule</h3><p>Each player may only speak in their own tense. Slip up and Present presses Wait once.</p></div>
     </div>
   </details>
@@ -1032,7 +1064,7 @@ const CHAPTERS = [
 /* ===== Online config: fill these in on your GitHub Pages copy ===== */
 const SUPABASE_URL = 'https://cahlwvxbssmaeqgyjggl.supabase.co';
 const SUPABASE_ANON_KEY = 'sb_publishable_y8zwTkRr_CIrQYZd1KKpdw_zyXWwGQz';
-const TABLE = 'hourglass_rooms';
+
 
 const WINDOW = 10;  // how many turns ahead Future sees
 
@@ -1773,7 +1805,7 @@ let dives = '';
 let pastDelay = 2;
 let states = [];
 let filter = 'all';
-let online = null; // {code, seat, chan, presence}
+let online = null; // see the Online section
 const journal = {pages:[], labels:{}, spread:0, busy:false};
 const hot = window.claude && window.claude.hot;
 
@@ -1785,12 +1817,12 @@ function canDive(){ return current().status==='playing' && isSeat('future'); }
 function cap(s){ return s[0].toUpperCase()+s.slice(1); }
 
 /* ===== Progress (this browser only) ===== */
-function loadCleared(){ try { return JSON.parse(localStorage.getItem('hk-cleared') || '[]'); } catch(e){ return []; } }
+function loadCleared(){ try { return JSON.parse(localStorage.getItem('tl-cleared') || '[]'); } catch(e){ return []; } }
 function markCleared(id){
   try {
     const c = new Set(loadCleared());
     if (c.has(id)) return;
-    c.add(id); localStorage.setItem('hk-cleared', JSON.stringify([...c]));
+    c.add(id); localStorage.setItem('tl-cleared', JSON.stringify([...c]));
     buildLevelCards();
   } catch(e){}
 }
@@ -2115,7 +2147,7 @@ function renderFuture(st){
 function act(a){
   if (!canMove()) return;
   if (a==='V' && current().shards<=0) return;
-  moves += a;
+  moves += a; touch();
   render();
   if (online) pushRow({moves});
 }
@@ -2123,26 +2155,26 @@ function dive(i){
   if (!canDive()) return;
   const cur = current();
   if (cur.used.includes(i) || cur.focus<=0) return;
-  dives += (dives ? ';' : '') + cur.t + ':' + i;
+  dives += (dives ? ';' : '') + cur.t + ':' + i; touch();
   render();
   if (online) pushRow({dives});
 }
 function setLevel(i, push){
   levelIdx = Math.max(0, Math.min(LEVELS.length-1, i|0));
   LV = LEVELS[levelIdx];
-  moves = ''; dives = '';
+  moves = ''; dives = ''; touch();
   buildLevelUI();
   render();
-  if (online && push) pushRow({level:levelIdx, moves:'', dives:''});
+  if (online && push){ online.run++; pushRow({level:levelIdx, moves:'', dives:'', run:online.run}); }
 }
 function restart(){
   if (!isSeat('present')) return;
-  moves = ''; dives = ''; buildJournal(); render();
-  if (online) pushRow({moves:'', dives:''});
+  moves = ''; dives = ''; touch(); buildJournal(); render();
+  if (online){ online.run++; pushRow({moves:'', dives:'', run:online.run}); }
 }
 function setDelay(d){
   if (!isSeat('past')) return;
-  pastDelay = Math.max(1, Math.min(6, d));
+  pastDelay = Math.max(1, Math.min(6, d)); touch();
   render();
   if (online) pushRow({delay:pastDelay});
 }
@@ -2164,7 +2196,8 @@ function renderModeBar(){
   const mb = $('modeBar');
   if (online){
     mb.style.borderLeftColor = online.seat ? 'var(--'+online.seat+')' : 'var(--line)';
-    mb.innerHTML = '<span><b>Online</b> in room <b>'+online.code+'</b>.</span><span>You only see your own seat. Talk to the others out loud or over voice chat.</span>';
+    const who = ['past','present','future'].map(s => { const p = holderOf(s); return '<span><b style="color:var(--'+s+')">'+cap(s)+'</b> '+(p ? esc(p.name)+(p.client===online.me?' (you)':'')+(p.alive?'':' · away') : '<i>empty</i>')+'</span>'; }).join('');
+    mb.innerHTML = '<span><b>Room '+online.code+'</b></span>'+who;
   } else {
     mb.style.borderLeftColor = 'var(--present)';
     mb.innerHTML = filter==='all'
@@ -2201,14 +2234,28 @@ $('restartBtn').addEventListener('click', () => {
 $('bannerRestart').addEventListener('click', restart);
 $('bannerNext').addEventListener('click', () => { if (isSeat('present')) setLevel(levelIdx+1, true); });
 
-/* ===== Cinematic seat picker ===== */
+/* ===== Small helpers ===== */
+function esc(s){ return String(s).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c])); }
+let localSeq = 0;
+function touch(){ localSeq++; }
+function copyText(input, btn){
+  const done = () => { const old = btn.textContent; btn.textContent = 'Copied'; setTimeout(() => { btn.textContent = old; }, 1500); };
+  try { navigator.clipboard.writeText(input.value).then(done, () => { input.focus(); input.select(); }); }
+  catch(e){ input.focus(); input.select(); }
+}
+function savedName(){ try { return localStorage.getItem('tl-name') || ''; } catch(e){ return ''; } }
+function saveName(n){ try { localStorage.setItem('tl-name', n); } catch(e){} }
+function cleanName(n){ return String(n || '').replace(/\s+/g,' ').trim().slice(0,16); }
+
+/* ===== Cinematic overlay =====
+   One black frame with a blue border hosts every pre-game screen:
+   'name' (nickname), 'lobby' (waiting room), 'seats' (Who are you...). */
 const SEATS = {
   past:{role:'Sees the whole map, a few turns too late.', words:['was','did']},
   present:{role:'Moves the hero. Sees one step around.', words:['is','am']},
   future:{role:'Knows what is coming. Never sees the map.', words:['will','shall']}
 };
 function glyph(seat){
-  // a pixel hourglass: sand at the bottom (past), falling (present), still on top (future)
   const top = seat==='future' ? '<rect x="5" y="4" width="8" height="3"/><rect x="6" y="7" width="6" height="2"/>' : seat==='present' ? '<rect x="7" y="6" width="4" height="2"/><rect x="8" y="8" width="2" height="2"/>' : '';
   const stream = seat==='present' ? '<rect x="8.5" y="10" width="1" height="5"/>' : '';
   const bottom = seat==='past' ? '<rect x="6" y="13" width="6" height="2"/><rect x="5" y="15" width="8" height="3"/>' : seat==='present' ? '<rect x="6" y="15" width="6" height="3"/>' : '';
@@ -2217,70 +2264,93 @@ function glyph(seat){
     '<g fill="none" stroke="#3a74ff" stroke-width="1"><path d="M4 3h10v3l-4 4 4 4v4H4v-4l4-4-4-4z"/></g>' +
     '<g fill="#e9eeff">'+top+stream+bottom+'</g></svg>';
 }
-let cineCtx = null;
-function openCine(opts){
-  cineCtx = opts;
-  $('cineRoom').textContent = opts.roomLabel || '';
-  const t = 'Who are you';
-  $('cineTitle').innerHTML = [...t].map((c,i) => '<span class="ch" style="animation-delay:'+(0.5+i*0.09).toFixed(2)+'s">'+(c===' '?'&nbsp;':c)+'</span>').join('') +
-    [0,1,2].map(i => '<span class="dot" style="animation-delay:'+(0.5+t.length*0.09+0.25+i*0.28).toFixed(2)+'s, '+(2.8+i*0.2).toFixed(2)+'s">.</span>').join('');
-  $('cineCards').innerHTML = ['past','present','future'].map(s =>
+let cineStage = null;
+function typed(text, dots, delay){
+  let d = delay || 0.5;
+  let h = [...text].map((c,i) => '<span class="ch" style="animation-delay:'+(d+i*0.09).toFixed(2)+'s">'+(c===' '?'&nbsp;':esc(c))+'</span>').join('');
+  if (dots) h += [0,1,2].map(i => '<span class="dot" style="animation-delay:'+(d+text.length*0.09+0.25+i*0.28).toFixed(2)+'s, '+(2.8+i*0.2).toFixed(2)+'s">.</span>').join('');
+  return h;
+}
+function showCine(stage, room, titleHTML, label, bodyHTML, footHTML){
+  cineStage = stage;
+  const el = $('cine');
+  el.dataset.stage = stage;
+  $('cineRoom').textContent = room || '';
+  $('cineTitle').innerHTML = titleHTML;
+  $('cineTitle').setAttribute('aria-label', label);
+  $('cineCards').innerHTML = bodyHTML;
+  $('cineFoot').innerHTML = footHTML;
+  ['cineFoot','cineRoom'].forEach(id => { const n = $(id); n.style.animation = 'none'; void n.offsetWidth; n.style.animation = ''; });
+  el.classList.remove('leaving');
+  el.hidden = false;
+}
+function closeCine(){
+  cineStage = null;
+  const el = $('cine');
+  if (el.hidden) return;
+  el.classList.add('leaving');
+  setTimeout(() => { if (!cineStage){ el.hidden = true; el.classList.remove('leaving'); render(); } }, 600);
+}
+function seatCardsHTML(){
+  return ['past','present','future'].map(s =>
     '<div class="cine-slot"><button type="button" class="cine-card" data-seat="'+s+'" aria-label="'+cap(s)+': '+SEATS[s].role+'">' +
       '<span class="sheet back b1">'+SEATS[s].words[0]+'</span>' +
       '<span class="sheet back b2">'+SEATS[s].words[1]+'</span>' +
       '<span class="sheet front">'+glyph(s)+'<span class="nm">'+cap(s)+'</span><span class="role">'+SEATS[s].role+'</span></span>' +
+      '<span class="tag" hidden></span>' +
     '</button></div>').join('');
-  let foot = '';
-  if (opts.invite) foot += '<div class="cine-invite"><input id="cineInviteLink" readonly value="'+opts.invite+'" aria-label="Invite link"><button type="button" class="btn" id="cineCopy">Copy invite</button></div>';
-  if (opts.allowAll) foot += '<button type="button" class="linkish" id="cineAll">Testing alone? Show all three seats</button>';
-  $('cineFoot').innerHTML = foot;
-  $('cine').classList.remove('leaving');
-  $('cine').hidden = false;
-  updateCineTaken(opts.taken || {});
 }
-function updateCineTaken(taken){
-  document.querySelectorAll('.cine-card').forEach(b => {
-    const t = !!taken[b.dataset.seat];
-    b.disabled = t;
-    const tag = b.querySelector('.taken');
-    if (t && !tag) b.insertAdjacentHTML('beforeend','<span class="taken">Taken</span>');
-    if (!t && tag) tag.remove();
-  });
-}
-function closeCine(){
-  const el = $('cine');
-  el.classList.add('leaving');
-  setTimeout(() => { el.hidden = true; el.classList.remove('leaving'); render(); }, 600);
-}
-$('cine').addEventListener('click', e => {
-  const card = e.target.closest('.cine-card');
-  if (card && !card.disabled && cineCtx){ cineCtx.onPick(card.dataset.seat); return; }
-  if (e.target.closest('#cineAll') && cineCtx && cineCtx.onAll){ cineCtx.onAll(); return; }
-  if (e.target.closest('#cineCopy')) copyText($('cineInviteLink'), $('cineCopy'));
-});
-function copyText(input, btn){
-  const done = () => { const old = btn.textContent; btn.textContent = 'Copied'; setTimeout(() => { btn.textContent = old; }, 1500); };
-  try {
-    navigator.clipboard.writeText(input.value).then(done, () => { input.focus(); input.select(); });
-  } catch(e){ input.focus(); input.select(); }
-}
-function openLocalCine(){
-  openCine({
-    roomLabel:'Local test · one screen',
-    allowAll:true,
-    onPick: seat => { filter = seat; closeCine(); applyFilter(); },
-    onAll: () => { filter = 'all'; closeCine(); applyFilter(); }
-  });
+function inviteHTML(){
+  return '<div class="cine-invite"><input id="cineInviteLink" readonly value="'+esc(inviteUrl(online.code))+'" aria-label="Invite link"><button type="button" class="btn" id="cineCopy">Copy invite</button></div>';
 }
 
-/* ===== Online (Supabase) ===== */
+/* Local test: pick a seat for this screen, or show all three. */
+function openLocalCine(){
+  showCine('local', 'Local test · one screen', typed('Who are you', true), 'Who are you...', seatCardsHTML(),
+    '<button type="button" class="linkish" id="cineAll">Testing alone? Show all three seats</button>');
+}
+
+$('cine').addEventListener('click', e => {
+  const card = e.target.closest('.cine-card');
+  if (card && !card.disabled){
+    if (cineStage==='local'){ filter = card.dataset.seat; closeCine(); applyFilter(); }
+    else if (cineStage==='seats') claimSeat(card.dataset.seat);
+    return;
+  }
+  if (e.target.closest('#cineAll')){ filter = 'all'; closeCine(); applyFilter(); return; }
+  if (e.target.closest('#cineCopy')){ copyText($('cineInviteLink'), $('cineCopy')); return; }
+  if (e.target.closest('#cineStart')){ startRoom(); return; }
+  if (e.target.closest('#cineLeave')){ leaveRoom(); return; }
+  if (e.target.closest('#cineKeep')){ online.switching = false; online.status = ''; syncStage(); return; }
+  if (e.target.closest('#cineLocal')){ try { history.replaceState(null,'',location.href.split('#')[0]); } catch(err){} pendingCode = null; openLocalCine(); }
+});
+$('cine').addEventListener('submit', e => {
+  if (e.target.id!=='nameForm') return;
+  e.preventDefault();
+  const n = cleanName($('nameInput').value);
+  if (!n){ $('nameErr').textContent = 'Type a nickname so the others know who you are.'; $('nameInput').focus(); return; }
+  saveName(n);
+  $('nameErr').textContent = '';
+  joinCode(pendingCode, n);
+});
+
+/* ===== Online (Supabase) =====
+   The database decides who holds which seat. Every client polls the room every
+   1.5 seconds (which also acts as its heartbeat) and refreshes instantly when
+   Supabase Realtime reports a change. */
 const configured = !!(SUPABASE_URL && SUPABASE_ANON_KEY);
-let sb = null, pend = null, sending = false;
-const clientId = Math.random().toString(36).slice(2,10);
+const ROOMS = 'timelinked_rooms';
+let sb = null, pendingCode = null;
+const clientId = (() => {
+  const make = () => Math.random().toString(36).slice(2,10) + Math.random().toString(36).slice(2,6);
+  try { let id = sessionStorage.getItem('tl-client'); if (!id){ id = make(); sessionStorage.setItem('tl-client', id); } return id; }
+  catch(e){ return make(); }
+})();
 $('onlineNote').innerHTML = configured
-  ? 'Create a room and send the invite link. Everyone who opens it picks who they are. Present picks the level.'
-  : 'Online play needs your Supabase project. Put your project URL and anon key into <code>SUPABASE_URL</code> and <code>SUPABASE_ANON_KEY</code> at the top of the script in <code>index.html</code>, run <code>supabase.sql</code> once, and host the page on GitHub Pages. This preview only runs the local test.';
-$('createBtn').disabled = !configured; $('joinBtn').disabled = !configured; $('codeInput').disabled = !configured;
+  ? 'Pick a nickname, then create a room and send the invite link. Everyone waits in the lobby until the host starts, then picks who they are.'
+  : 'Online play needs your Supabase project. Put your project URL and publishable key into <code>SUPABASE_URL</code> and <code>SUPABASE_ANON_KEY</code> at the top of the script in <code>index.html</code>, run <code>supabase.sql</code> once, and host the page on GitHub Pages. This preview only runs the local test.';
+['createBtn','joinBtn','codeInput','nickInput'].forEach(id => { $(id).disabled = !configured; });
+$('nickInput').value = savedName();
 $('onlineBtn').addEventListener('click', () => {
   const p = $('onlinePanel'); p.hidden = !p.hidden; $('onlineBtn').setAttribute('aria-expanded', String(!p.hidden));
 });
@@ -2297,131 +2367,303 @@ function loadLib(){
 }
 async function client(){ if (!sb){ await loadLib(); sb = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY); } return sb; }
 function newCode(){ const A='ABCDEFGHJKLMNPQRSTUVWXYZ'; let c=''; for (let i=0;i<4;i++) c += A[Math.floor(Math.random()*A.length)]; return c; }
+function rpc(fn, args){ return sb.rpc(fn, args).then(({data, error}) => { if (error) throw new Error(error.message); return data; }); }
+
+function panelName(){
+  const n = cleanName($('nickInput').value);
+  if (!n){ setErr('Type a nickname first.'); $('nickInput').focus(); return null; }
+  saveName(n); return n;
+}
 $('createBtn').addEventListener('click', async () => {
   setErr('');
+  const name = panelName(); if (!name) return;
   try {
     const c = await client();
     let code = newCode(), tries = 0, error = null;
-    const row = {level:levelIdx, moves:'', dives:'', delay:pastDelay};
     do {
-      ({error} = await c.from(TABLE).insert(Object.assign({code}, row)));
+      ({error} = await c.from(ROOMS).insert({code, host:clientId, phase:'lobby', level:levelIdx, delay:pastDelay}));
       if (error && error.code==='23505'){ code = newCode(); tries++; } else break;
     } while (tries<5);
     if (error) throw new Error('Could not create a room: '+error.message);
-    openRoom(code, row);
+    await joinCode(code, name);
   } catch(err){ setErr(err.message); }
 });
-async function joinCode(code){
-  setErr('');
-  if (!/^[A-Z]{4}$/.test(code)){ setErr('Room codes are 4 letters.'); return; }
-  try {
-    const c = await client();
-    const {data,error} = await c.from(TABLE).select('level,moves,dives,delay').eq('code',code).maybeSingle();
-    if (error) throw new Error('Could not reach the room: '+error.message);
-    if (!data) throw new Error('No room uses the code '+code+'. Check the letters with the host.');
-    openRoom(code, data);
-  } catch(err){
-    setErr(err.message);
-    $('onlinePanel').hidden = false;
-  }
-}
-$('joinBtn').addEventListener('click', () => joinCode($('codeInput').value.trim().toUpperCase()));
+$('joinBtn').addEventListener('click', () => {
+  const name = panelName(); if (!name) return;
+  joinCode($('codeInput').value.trim().toUpperCase(), name);
+});
 $('codeInput').addEventListener('keydown', e => { if (e.key==='Enter') $('joinBtn').click(); });
 
-function takenByOthers(){
-  const taken = {};
-  if (!online || !online.presence) return taken;
-  for (const [key, metas] of Object.entries(online.presence)){
-    if (key===clientId) continue;
-    metas.forEach(m => { if (m.seat) taken[m.seat] = true; });
-  }
-  return taken;
+/* Opened from an invite link: ask for a nickname first. */
+function showNameScreen(code, err){
+  pendingCode = code;
+  showCine('name', 'Room '+code, typed('TimeLinked', false, 0.2), 'TimeLinked',
+    '<form class="cine-form" id="nameForm" novalidate>' +
+      '<label for="nameInput">What should the others call you?</label>' +
+      '<input id="nameInput" maxlength="16" autocomplete="nickname" spellcheck="false" value="'+esc(savedName())+'" placeholder="Nickname">' +
+      '<button type="submit" class="cine-btn">Join room</button>' +
+      '<p class="cine-err" id="nameErr" role="alert">'+esc(err || '')+'</p>' +
+    '</form>',
+    '<button type="button" class="linkish" id="cineLocal">Play on this screen instead</button>');
+  setTimeout(() => { const i = $('nameInput'); if (i && cineStage==='name') i.focus({preventScroll:true}); }, 400);
 }
-function openRoom(code, row){
-  online = {code, seat:null, chan:null, presence:{}};
-  levelIdx = row.level|0; LV = LEVELS[levelIdx];
-  moves = row.moves || ''; dives = row.dives || '';
-  if (row.delay) pastDelay = row.delay|0;
-  buildLevelUI();
+
+async function joinCode(code, name){
+  setErr('');
+  if (!/^[A-Z]{4}$/.test(code || '')){ setErr('Room codes are 4 letters.'); return; }
+  try {
+    await client();
+    const {data, error} = await sb.from(ROOMS).select('code').eq('code', code).maybeSingle();
+    if (error) throw new Error('Could not reach the room: '+error.message);
+    if (!data) throw new Error('No room uses the code '+code+'. Check the letters with the host.');
+    await rpc('timelinked_join', {p_room:code, p_client:clientId, p_name:name});
+    enterRoom(code, name);
+  } catch(err){
+    if (cineStage==='name'){ $('nameErr').textContent = err.message; }
+    else { setErr(err.message); $('onlinePanel').hidden = false; }
+  }
+}
+
+function enterRoom(code, name){
+  if (online) teardown();
+  online = {code, me:clientId, name, seat:null, room:null, players:[], run:-1,
+    entered:false, switching:false, status:'', chan:null, timer:0, inflight:false, again:false,
+    writing:0, pend:null, gone:false};
   try { history.replaceState(null, '', '#room-'+code); } catch(e){}
   $('onlinePanel').hidden = false;
   $('onlineSetup').style.display = 'none'; $('onlineLive').hidden = false;
   $('roomCode').textContent = code;
   $('inviteLink').value = inviteUrl(code);
-  const chan = sb.channel('hourglass-'+code, {config:{presence:{key:clientId}}});
-  chan.on('postgres_changes', {event:'UPDATE', schema:'public', table:TABLE, filter:'code=eq.'+code}, p => onRemote(p.new || {}));
-  chan.on('presence', {event:'sync'}, () => {
-    online.presence = chan.presenceState();
-    renderPresence();
-    if (cineOpen()) updateCineTaken(takenByOthers());
-  });
-  chan.subscribe();
-  online.chan = chan;
-  showRoomCine();
+  $('seatFilter').hidden = true;
+  try {
+    const chan = sb.channel('timelinked-'+code);
+    chan.on('postgres_changes', {event:'*', schema:'public', table:ROOMS, filter:'code=eq.'+code}, () => refreshSoon());
+    chan.on('postgres_changes', {event:'*', schema:'public', table:'timelinked_players', filter:'room=eq.'+code}, () => refreshSoon());
+    chan.subscribe();
+    online.chan = chan;
+  } catch(e){ /* polling still works */ }
+  showCine('lobby', 'Room '+code, typed('Waiting room', false, 0.2), 'Waiting room',
+    '<ul class="cine-players" id="cinePlayers"><li class="muted">Connecting…</li></ul>', '');
+  refresh();
 }
-function showRoomCine(){
-  openCine({
-    roomLabel:'Room '+online.code,
-    invite: inviteUrl(online.code),
-    taken: takenByOthers(),
-    onPick: seat => {
-      if (takenByOthers()[seat]) return;
-      online.seat = seat; filter = seat;
-      try { online.chan.track({seat}); } catch(e){}
-      $('mySeatLabel').textContent = cap(seat);
-      $('mySeatLabel').style.color = 'var(--'+seat+')';
-      closeCine(); applyFilter();
-    }
-  });
-}
-$('switchSeatBtn').addEventListener('click', () => { if (online) showRoomCine(); });
-$('copyInvite').addEventListener('click', () => copyText($('inviteLink'), $('copyInvite')));
-function onRemote(r){
+function teardown(){
   if (!online) return;
-  const busy = sending || !!pend;
-  if (r.delay && !(online.seat==='past' && busy)) pastDelay = r.delay|0;
-  const lvl = r.level|0;
-  if (lvl !== levelIdx){
-    levelIdx = lvl; LV = LEVELS[lvl];
-    moves = r.moves || ''; dives = r.dives || '';
-    buildLevelUI(); render(); return;
-  }
-  const rm = r.moves || '', rd = r.dives || '';
-  const wasRun = !!(moves || dives);
-  let changed = false;
-  if (rm !== moves && !(online.seat==='present' && busy && moves.startsWith(rm))){ moves = rm; changed = true; }
-  if (rd !== dives && !(online.seat==='future' && busy && dives.startsWith(rd))){ dives = rd; changed = true; }
-  if (wasRun && !moves && !dives) buildJournal();
-  render();
+  clearTimeout(online.timer);
+  online.gone = true;
+  if (online.chan){ try { sb.removeChannel(online.chan); } catch(e){} }
 }
-function renderPresence(){
-  const taken = {past:0,present:0,future:0};
-  Object.values(online.presence || {}).forEach(arr => arr.forEach(m => { if (taken[m.seat]!==undefined) taken[m.seat]++; }));
-  $('presence').innerHTML = ['past','present','future'].map(s =>
-    '<span class="chip '+(taken[s]?'on-'+s:'off')+'">'+cap(s)+(taken[s]?' ●':' ○')+'</span>').join('');
-}
-function pushRow(fields){
-  pend = Object.assign(pend || {}, fields);
-  if (sending) return;
-  sending = true;
-  (async () => {
-    while (pend){
-      const f = pend; pend = null;
-      f.updated_at = new Date().toISOString();
-      const {error} = await sb.from(TABLE).update(f).eq('code', online.code);
-      if (error) setErr('Lost sync with the room: '+error.message);
+function refreshSoon(){ if (!online) return; clearTimeout(online.timer); online.timer = setTimeout(refresh, 60); }
+async function refresh(){
+  const o = online; if (!o || o.gone) return;
+  if (o.inflight){ o.again = true; return; }
+  o.inflight = true;
+  const seqAtStart = localSeq, writesAtStart = o.writing + (o.pend ? 1 : 0);
+  try {
+    const st = await rpc('timelinked_state', {p_room:o.code, p_client:o.me});
+    if (o.gone) return;
+    const fresh = localSeq===seqAtStart && writesAtStart===0 && o.writing===0 && !o.pend;
+    applyState(st, fresh);
+    setErr('');
+  } catch(err){
+    if (!o.gone) setErr('Connection trouble: '+err.message+'. Retrying…');
+  } finally {
+    o.inflight = false;
+    if (!o.gone){
+      clearTimeout(o.timer);
+      o.timer = setTimeout(refresh, o.again ? 50 : 1500);
+      o.again = false;
     }
-    sending = false;
-  })();
+  }
 }
-$('leaveBtn').addEventListener('click', async () => {
-  if (online && online.chan){ try { await sb.removeChannel(online.chan); } catch(e){} }
-  online = null; filter = 'all';
+function holderOf(seat){
+  if (!online) return null;
+  return online.players.find(p => p.seat===seat && p.held) || null;
+}
+function hostId(){
+  const ps = online.players;
+  const h = ps.find(p => p.client===online.room.host && p.alive);
+  if (h) return h.client;
+  const first = ps.find(p => p.alive);
+  return first ? first.client : online.room.host;
+}
+function applyState(st, fresh){
+  const o = online;
+  if (!st || !st.room){
+    teardown(); online = null;
+    showNameScreen(o.code, 'This room has closed. Ask the host for a new invite link.');
+    return;
+  }
+  o.room = st.room;
+  o.players = st.players || [];
+  const me = o.players.find(p => p.client===o.me);
+  if (!me){ rpc('timelinked_join', {p_room:o.code, p_client:o.me, p_name:o.name}).catch(() => {}); return; }
+  o.seat = me.seat || null;
+
+  // Room fields: only trust a reply that started after our last change landed.
+  if (fresh){
+    const r = st.room;
+    const runChanged = (r.run|0) !== o.run, lvlChanged = (r.level|0) !== levelIdx;
+    const changed = runChanged || lvlChanged || (r.moves||'') !== moves || (r.dives||'') !== dives || (r.delay|0) !== pastDelay;
+    o.run = r.run|0;
+    pastDelay = r.delay|0 || 2;
+    moves = r.moves || ''; dives = r.dives || '';
+    if (lvlChanged){ levelIdx = r.level|0; LV = LEVELS[levelIdx]; buildLevelUI(); }
+    else if (runChanged) buildJournal();
+    if (changed && o.entered) render();
+  }
+  renderRoster();
+  syncStage();
+}
+function syncStage(){
+  const o = online; if (!o || !o.room) return;
+  let stage;
+  if (o.room.phase!=='started') stage = 'lobby';
+  else if (o.switching || !o.seat) stage = 'seats';
+  else if (o.entered) stage = 'game';
+  else {
+    const undecided = o.players.filter(p => p.alive && !p.seat);
+    if (undecided.length===0){ o.entered = true; stage = 'game'; }
+    else stage = 'seats';
+  }
+  if (stage==='lobby') drawLobby();
+  else if (stage==='seats') drawSeats();
+  else if (cineStage){
+    filter = o.seat; closeCine(); applyFilter();
+    $('mySeatLabel').textContent = cap(o.seat);
+    $('mySeatLabel').style.color = 'var(--'+o.seat+')';
+  } else {
+    if (filter!==o.seat){ filter = o.seat; applyFilter(); }
+    else renderModeBar();
+    $('mySeatLabel').textContent = cap(o.seat);
+    $('mySeatLabel').style.color = 'var(--'+o.seat+')';
+  }
+}
+function drawLobby(){
+  const o = online;
+  if (cineStage!=='lobby'){
+    showCine('lobby', 'Room '+o.code, typed('Waiting room', false, 0.2), 'Waiting room',
+      '<ul class="cine-players" id="cinePlayers"></ul>', '');
+  }
+  const host = hostId();
+  $('cinePlayers').innerHTML = o.players.filter(p => p.alive || p.client===o.me).map(p =>
+    '<li><span class="pname">'+esc(p.name)+'</span>' +
+    (p.client===host ? '<span class="ptag host">Host</span>' : '') +
+    (p.client===o.me ? '<span class="ptag you">You</span>' : '') + '</li>').join('') || '<li class="muted">Nobody here yet.</li>';
+  const n = o.players.filter(p => p.alive).length;
+  const isHost = host===o.me;
+  const foot = inviteHTML() +
+    (isHost
+      ? '<button type="button" class="cine-btn" id="cineStart">Start game · '+n+' player'+(n===1?'':'s')+'</button>' +
+        '<p class="cine-hint">'+(n<3 ? 'TimeLinked plays best with three. You can start with fewer to try it out.' : 'Everyone is here.')+'</p>'
+      : '<p class="cine-hint">Waiting for '+esc((o.players.find(p => p.client===host)||{}).name || 'the host')+' to start…</p>') +
+    '<button type="button" class="linkish" id="cineLeave">Leave room</button>';
+  const f = $('cineFoot');
+  if (f.dataset.sig !== foot){ f.innerHTML = foot; f.dataset.sig = foot; }
+}
+function drawSeats(){
+  const o = online;
+  if (cineStage!=='seats'){
+    showCine('seats', 'Room '+o.code, typed('Who are you', true), 'Who are you...', seatCardsHTML(), '');
+    $('cineFoot').dataset.sig = '';
+  }
+  document.querySelectorAll('.cine-card').forEach(b => {
+    const s = b.dataset.seat, h = holderOf(s), mine = h && h.client===o.me;
+    const taken = !!h && !mine;
+    b.disabled = taken;
+    b.classList.toggle('mine', !!mine);
+    const tag = b.querySelector('.tag');
+    tag.hidden = !h;
+    tag.className = 'tag '+(mine ? 'you' : 'taken');
+    tag.textContent = mine ? 'You' : (h ? h.name : '');
+  });
+  let status = o.status;
+  if (!status){
+    if (!o.seat){
+      const free = ['past','present','future'].filter(s => !holderOf(s));
+      status = free.length ? 'Pick the moment you will play from.' : 'All three seats are taken right now.';
+    } else if (o.switching){
+      status = 'Pick a different seat, or keep yours.';
+    } else {
+      const waiting = o.players.filter(p => p.alive && !p.seat).map(p => esc(p.name));
+      status = waiting.length ? 'Waiting for '+listJoin(waiting)+' to pick…' : 'Here we go…';
+    }
+  }
+  const foot = '<p class="cine-status" aria-live="polite">'+status+'</p>' +
+    (o.switching && o.seat ? '<button type="button" class="cine-btn ghost" id="cineKeep">Keep '+cap(o.seat)+'</button>' : '') +
+    '<button type="button" class="linkish" id="cineLeave">Leave room</button>';
+  const f = $('cineFoot');
+  if (f.dataset.sig !== foot){ f.innerHTML = foot; f.dataset.sig = foot; }
+}
+function listJoin(a){ return a.length<=1 ? (a[0]||'') : a.slice(0,-1).join(', ')+' and '+a[a.length-1]; }
+
+async function startRoom(){
+  const o = online; if (!o) return;
+  const b = $('cineStart'); if (b) b.disabled = true;
+  try {
+    const {error} = await sb.from(ROOMS).update({phase:'started', updated_at:new Date().toISOString()}).eq('code', o.code);
+    if (error) throw new Error(error.message);
+    refreshSoon();
+  } catch(err){ setErr('Could not start: '+err.message); if (b) b.disabled = false; }
+}
+async function claimSeat(seat){
+  const o = online; if (!o) return;
+  if (o.seat===seat){ o.switching = false; o.status = ''; syncStage(); return; }
+  o.status = 'Claiming '+cap(seat)+'…'; drawSeats();
+  try {
+    const res = await rpc('timelinked_claim', {p_room:o.code, p_client:o.me, p_seat:seat});
+    if (res==='taken'){
+      o.status = 'Someone just took '+cap(seat)+'. Pick another.';
+    } else {
+      o.status = '';
+      o.switching = false;
+      o.seat = seat;
+      const me = o.players.find(p => p.client===o.me); if (me){ me.seat = seat; me.held = true; }
+      o.players.forEach(p => { if (p.client!==o.me && p.seat===seat) p.seat = null; });
+    }
+  } catch(err){ o.status = 'Could not claim the seat: '+esc(err.message); }
+  syncStage();
+  refreshSoon();
+}
+$('switchSeatBtn').addEventListener('click', () => { if (online){ online.switching = true; online.status = ''; syncStage(); } });
+$('copyInvite').addEventListener('click', () => copyText($('inviteLink'), $('copyInvite')));
+$('leaveBtn').addEventListener('click', () => leaveRoom());
+async function leaveRoom(){
+  const o = online; if (!o) return;
+  teardown(); online = null;
+  try { await rpc('timelinked_leave', {p_room:o.code, p_client:o.me}); } catch(e){}
   try { history.replaceState(null, '', location.href.split('#')[0]); } catch(e){}
   $('onlineSetup').style.display = 'flex'; $('onlineLive').hidden = true;
+  filter = 'all';
   setLevel(levelIdx, false);
   applyFilter();
-});
+  openLocalCine();
+}
+function renderRoster(){
+  $('presence').innerHTML = ['past','present','future'].map(s => {
+    const p = holderOf(s);
+    return '<span class="chip '+(p?'on-'+s:'off')+'">'+cap(s)+': '+(p ? esc(p.name) : '—')+'</span>';
+  }).join('');
+}
+function pushRow(fields){
+  const o = online; if (!o) return;
+  o.pend = Object.assign(o.pend || {}, fields);
+  if (o.writing) return;
+  o.writing++;
+  (async () => {
+    try {
+      while (o.pend && !o.gone){
+        const f = o.pend; o.pend = null;
+        f.updated_at = new Date().toISOString();
+        const {error} = await sb.from(ROOMS).update(f).eq('code', o.code);
+        if (error) setErr('Lost sync with the room: '+error.message);
+      }
+    } finally {
+      o.writing--;
+      touch();
+      refreshSoon();
+    }
+  })();
+}
 
 /* ===== Boot ===== */
 function start(data){
@@ -2435,7 +2677,7 @@ function start(data){
   buildLevelUI();
   applyFilter();
   const m = /^#room-([A-Za-z]{4})$/.exec(location.hash || '');
-  if (m && configured){ joinCode(m[1].toUpperCase()); return; }
+  if (m && configured){ showNameScreen(m[1].toUpperCase()); return; }
   if (m && !configured){ $('onlinePanel').hidden = false; setErr('This copy is not set up for online play yet, so the invite link cannot open a room.'); }
   if (!restoring) openLocalCine();
 }
