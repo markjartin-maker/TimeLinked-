@@ -200,6 +200,8 @@ button{font:inherit;color:inherit}
 .howto-box h3{margin:0 0 4px;font-family:var(--display);font-weight:400;font-size:13px;color:#e9eeff}
 .howto-box p{margin:0;font-size:13.5px;color:#aab8e6}
 .cine-stage-line{margin:0;font-family:var(--mono);font-size:13px;color:#aab8e6;text-align:center}
+.cine-step{display:inline-flex;gap:6px;margin-left:8px;vertical-align:middle}
+.cine-step .cine-btn{padding:2px 10px;font-size:14px}
 .cine-stage-line b{font-family:var(--display);font-weight:400;color:#e9eeff;font-size:15px}
 
 .tense{font-family:var(--mono);font-size:12px;color:var(--muted)}
@@ -426,6 +428,9 @@ button{font:inherit;color:inherit}
         <button type="button" data-seat="present" aria-pressed="false">Present</button>
         <button type="button" data-seat="future" aria-pressed="false">Future</button>
       </div>
+      <span class="stepper bar-delay" id="barDelay" role="group" aria-label="How many turns behind Past sees" hidden>Past delay
+        <button type="button" id="barDelayDown" aria-label="Fewer turns behind">−</button><b id="barDelayVal">2</b><button type="button" id="barDelayUp" aria-label="More turns behind">+</button>
+      </span>
       <button type="button" class="btn" id="briefBtn">Briefing</button>
       <button type="button" class="btn" id="stagesBtn">Stages</button>
       <button type="button" class="btn" id="restartBtn">Restart</button>
@@ -456,6 +461,7 @@ button{font:inherit;color:inherit}
             <canvas id="miniCanvas" aria-label="Minimap of explored areas. Click to look there."></canvas>
             <p class="hint" style="text-align:left">Drag the map to look back over anywhere already revealed. Double-click to follow the hero again.</p>
           </div>
+          <p class="hint" id="delayHint" style="text-align:left" hidden>The host sets how many turns behind you are.</p>
           <p class="section-label">What happened</p>
           <ol class="log" id="pastLog"></ol>
         </div>
@@ -2888,7 +2894,8 @@ function render(){
   // Past
   $('pastTurn').textContent = past.t;
   $('delayVal').textContent = pastDelay;
-  const canTune = isSeat('past');
+  const canTune = isHost();
+  $('delayHint').hidden = canTune;
   $('delayDown').disabled = !canTune || pastDelay<=1;
   $('delayUp').disabled = !canTune || pastDelay>=6;
   document.querySelector('.seat-past .seat-rule').textContent = 'Sees far around the hero, '+pastDelay+' turn'+(pastDelay===1?'':'s')+' late.';
@@ -3078,13 +3085,15 @@ function restart(){
   if (online){ online.run++; pushRow({moves:'', dives:'', run:online.run}); }
 }
 function setDelay(d){
-  if (!isSeat('past')) return;
+  if (!isHost()) return;
   pastDelay = Math.max(1, Math.min(6, d)); touch();
   render();
   if (online) pushRow({delay:pastDelay});
 }
 $('delayDown').addEventListener('click', () => setDelay(pastDelay-1));
 $('delayUp').addEventListener('click', () => setDelay(pastDelay+1));
+$('barDelayDown').addEventListener('click', () => { setDelay(pastDelay-1); renderBar(); });
+$('barDelayUp').addEventListener('click', () => { setDelay(pastDelay+1); renderBar(); });
 
 /* ===== Seat filter + top bar ===== */
 function applyFilter(){
@@ -3105,6 +3114,10 @@ function renderBar(){
   $('switchSeatBtn').hidden = !on;
   $('copyInvite').hidden = !on;
   $('stagesBtn').hidden = !isHost();
+  $('barDelay').hidden = !(on && isHost());
+  $('barDelayVal').textContent = pastDelay;
+  $('barDelayDown').disabled = pastDelay<=1;
+  $('barDelayUp').disabled = pastDelay>=6;
   $('restartBtn').hidden = !canRestart();
   const room = $('barRoom');
   room.hidden = !on;
@@ -3354,6 +3367,8 @@ $('cine').addEventListener('click', e => {
   else if (id==='cineCopy') copyText($('cineInviteLink'), $('cineCopy'));
   else if (id==='cineStart') startRoom();
   else if (id==='cineStage') openStages('room');
+  else if (id==='cineDelayDown'){ setDelay(pastDelay-1); drawLobby(); }
+  else if (id==='cineDelayUp'){ setDelay(pastDelay+1); drawLobby(); }
   else if (id==='cineLeave') leaveRoom();
   else if (id==='cineKeep'){ online.switching = false; online.status = ''; syncStage(); }
   else if (id==='cineLocal'){ try { history.replaceState(null,'',location.href.split('#')[0]); } catch(err){} pendingCode = null; showMenu(); }
@@ -3583,7 +3598,9 @@ function drawLobby(){
     (p.client===o.me ? '<span class="ptag you">You</span>' : '') + '</li>').join('') || '<li class="muted">Nobody here yet.</li>';
   const n = o.players.filter(p => p.alive).length;
   const isHost = host===o.me;
-  const stageLine = '<p class="cine-stage-line">Stage <b>'+esc(LV.code+' · '+LV.name)+'</b> · '+esc(LV.chapter.name)+'</p>';
+  const stageLine = '<p class="cine-stage-line">Stage <b>'+esc(LV.code+' · '+LV.name)+'</b> · '+esc(LV.chapter.name)+'</p>' +
+    '<p class="cine-stage-line">Past sees <b>'+pastDelay+'</b> turn'+(pastDelay===1?'':'s')+' behind' +
+    (host===o.me ? ' <span class="cine-step"><button type="button" class="cine-btn ghost" id="cineDelayDown" aria-label="Fewer turns behind"'+(pastDelay<=1?' disabled':'')+'>−</button><button type="button" class="cine-btn ghost" id="cineDelayUp" aria-label="More turns behind"'+(pastDelay>=6?' disabled':'')+'>+</button></span>' : '') + '</p>';
   const foot = stageLine + inviteHTML() +
     (isHost
       ? '<div class="menu-row" style="width:auto"><button type="button" class="cine-btn ghost" id="cineStage">Change stage</button><button type="button" class="cine-btn" id="cineStart">Start game · '+n+' player'+(n===1?'':'s')+'</button></div>' +
