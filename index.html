@@ -8,8 +8,8 @@
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Atkinson+Hyperlegible:wght@400;700&family=Caveat:wght@500;700&family=JetBrains+Mono:wght@500;700&family=Silkscreen:wght@400;700&display=swap">
 <style>
-/* Layout: chapter strip, then three seat panels side by side (Past | Present | Future) that stack on narrow screens.
-   One committed dungeon look: dark stone, blocky edges, each seat owns one hue. */
+/* Layout: a black, blue-framed menu and lobby; a stage-select page; then the game fills the window:
+   a slim bar on top and the player's seat below it. Dungeon look: dark stone, blocky edges, each seat owns one hue. */
 :root{
   color-scheme: dark;
   --bg:#16141c;
@@ -49,18 +49,14 @@ body{
   font-size:15px;
   line-height:1.5;
 }
-.app{max-width:1420px;margin:0 auto;padding-block:22px 48px;padding-inline:16px;display:flex;flex-direction:column;gap:16px}
-.top{display:flex;flex-wrap:wrap;gap:14px 24px;align-items:flex-end;justify-content:space-between}
-h1{font-family:var(--display);font-weight:700;font-size:clamp(28px,4.4vw,44px);letter-spacing:.02em;margin:0;line-height:1;text-wrap:balance}
-h1 .glass{color:var(--present)}
-.tag{margin:8px 0 0;color:var(--muted);max-width:60ch}
-.top-actions{display:flex;flex-wrap:wrap;gap:8px;align-items:center}
+
+html,body{height:100%}
 button{font:inherit;color:inherit}
 .btn{
-  font-family:var(--display);font-size:13px;letter-spacing:.04em;
+  font-family:var(--display);font-size:12px;letter-spacing:.04em;
   background:var(--panel-2);color:var(--text);
-  border:2px solid var(--line);padding:8px 12px;cursor:pointer;
-  box-shadow:0 3px 0 var(--shadow);
+  border:2px solid var(--line);padding:7px 11px;cursor:pointer;
+  box-shadow:0 3px 0 var(--shadow);white-space:nowrap;
 }
 .btn:hover{border-color:var(--muted)}
 .btn:active{transform:translateY(2px);box-shadow:0 1px 0 var(--shadow)}
@@ -70,84 +66,140 @@ button{font:inherit;color:inherit}
 .btn.warn{border-color:var(--danger);color:var(--danger)}
 :focus-visible{outline:2px solid var(--present);outline-offset:2px}
 .seg{display:inline-flex;flex-wrap:wrap;border:2px solid var(--line);background:var(--panel);box-shadow:0 3px 0 var(--shadow)}
-.seg button{font-family:var(--display);font-size:12px;letter-spacing:.04em;background:transparent;border:0;padding:8px 10px;cursor:pointer;color:var(--muted)}
+.seg button{font-family:var(--display);font-size:11px;letter-spacing:.04em;background:transparent;border:0;padding:7px 9px;cursor:pointer;color:var(--muted)}
 .seg button[aria-pressed="true"]{background:var(--panel-2);color:var(--text)}
 .seg button[data-seat="past"][aria-pressed="true"]{color:var(--past)}
 .seg button[data-seat="present"][aria-pressed="true"]{color:var(--present)}
 .seg button[data-seat="future"][aria-pressed="true"]{color:var(--future)}
-
-.levels{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,240px),1fr));gap:10px}
-.chap{background:var(--panel);border:2px solid var(--line);padding:10px 12px;box-shadow:0 4px 0 var(--shadow);display:grid;grid-template-columns:auto minmax(0,1fr);gap:6px 10px;align-items:start}
-.chap.on{border-color:var(--present);background:var(--panel-2)}
-.chap .sw{width:28px;height:28px;display:flex;align-items:center;justify-content:center;font-family:var(--display);font-size:13px;color:#16141c;box-shadow:inset -4px -4px 0 rgba(0,0,0,.25)}
-.chap .nm{font-family:var(--display);font-size:14px;line-height:1.2;padding-top:5px}
-.chap .tags{grid-column:1 / -1;display:flex;flex-wrap:wrap;gap:4px}
-.chap .tags span{font-family:var(--mono);font-size:11px;border:1px solid var(--line);padding:0 5px;color:var(--muted)}
-.pips{grid-column:1 / -1;display:flex;gap:6px;flex-wrap:wrap}
-.pip{font-family:var(--display);font-size:11px;letter-spacing:.03em;background:var(--bg);color:var(--muted);border:2px solid var(--line);padding:5px 8px;cursor:pointer;display:inline-flex;gap:6px;align-items:center;min-width:0}
-.pip:hover{border-color:var(--muted);color:var(--text)}
-.pip[aria-pressed="true"]{border-color:var(--present);color:var(--present)}
-.pip.armed{border-color:var(--danger);color:var(--danger)}
-.pip[disabled]{cursor:not-allowed;opacity:.55}
-.pip .ok{color:var(--good)}
-
-.brief{display:grid;grid-template-columns:minmax(0,auto) minmax(0,1fr);gap:6px 18px;align-items:start;background:var(--panel);border:2px solid var(--line);border-left:6px solid var(--present);padding:12px 16px}
-.brief h2{font-family:var(--display);font-size:18px;margin:0;line-height:1.2}
-.brief .scene{font-size:13.5px;color:var(--muted);margin:2px 0 0;max-width:34ch}
-.brief ul{margin:0;padding-left:18px;display:flex;flex-direction:column;gap:4px;font-size:14.5px;max-width:78ch}
-.brief li::marker{color:var(--present)}
-@media (max-width:760px){ .brief{grid-template-columns:minmax(0,1fr)} }
-
-.modebar{display:flex;flex-wrap:wrap;gap:6px 14px;align-items:center;font-size:14px;color:var(--muted);border-left:4px solid var(--present);padding:6px 12px;background:var(--panel)}
-.modebar b{color:var(--text)}
 .chip{font-family:var(--mono);font-size:12px;padding:2px 8px;border:2px solid var(--line);background:var(--panel-2);color:var(--text);white-space:nowrap}
 .chip.on-past{border-color:var(--past);color:var(--past)}
 .chip.on-present{border-color:var(--present);color:var(--present)}
 .chip.on-future{border-color:var(--future);color:var(--future)}
 .chip.off{opacity:.5}
+.chip.me{box-shadow:inset 0 -3px 0 currentColor}
 
-.online{background:var(--panel);border:2px solid var(--line);box-shadow:0 6px 0 var(--shadow);padding:14px 16px;display:flex;flex-direction:column;gap:12px}
-.online h2{font-family:var(--display);font-size:16px;margin:0}
-.online p{margin:0;max-width:70ch}
-.row{display:flex;flex-wrap:wrap;gap:10px;align-items:center}
-.seat-pick{display:flex;flex-wrap:wrap;gap:8px;border:0;padding:0;margin:0}
-.seat-pick legend{font-size:13px;color:var(--muted);margin-bottom:6px;padding:0}
-.seat-pick label{display:inline-flex;gap:6px;align-items:center;border:2px solid var(--line);padding:6px 10px;cursor:pointer;font-family:var(--display);font-size:12px}
-.seat-pick input{accent-color:var(--present)}
-.code-input.nick{text-transform:none;letter-spacing:.02em;width:12em}
-.code-input{font-family:var(--mono);font-size:16px;letter-spacing:.2em;text-transform:uppercase;width:7.5em;background:var(--bg);color:var(--text);border:2px solid var(--line);padding:7px 10px}
-.err{color:var(--danger);font-size:14px;min-height:1.2em;margin:0}
-.note{font-size:14px;color:var(--muted)}
-.note code{font-family:var(--mono);font-size:12.5px;color:var(--text)}
+/* ---------- Game view: slim bar + seats filling the rest of the window ---------- */
+.game{height:100%;display:flex;flex-direction:column;min-height:0}
+.bar{flex:none;display:flex;align-items:center;gap:8px 16px;flex-wrap:wrap;padding:8px 16px;background:var(--panel);border-bottom:2px solid var(--line);box-shadow:0 3px 0 var(--shadow);position:relative;z-index:2}
+.logo{font-family:var(--display);font-size:18px;letter-spacing:.02em;line-height:1;white-space:nowrap}
+.logo b{color:var(--present);font-weight:700}
+.bar-level{display:flex;flex-direction:column;line-height:1.15;min-width:0}
+.bar-level b{font-family:var(--display);font-size:13px;font-weight:400;white-space:nowrap}
+.bar-level small{font-size:12px;color:var(--muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.bar-sw{width:22px;height:22px;flex:none;box-shadow:inset -3px -3px 0 rgba(0,0,0,.25);display:flex;align-items:center;justify-content:center;font-family:var(--display);font-size:11px;color:#16141c}
+.bar-room{display:flex;flex-wrap:wrap;gap:6px;align-items:center}
+.bar-actions{margin-left:auto;display:flex;flex-wrap:wrap;gap:6px;align-items:center}
 
-.banner{display:flex;flex-wrap:wrap;gap:10px 16px;align-items:center;justify-content:space-between;padding:12px 16px;border:2px solid var(--line);background:var(--panel-2);box-shadow:0 6px 0 var(--shadow)}
-.banner.won{border-color:var(--good)}
-.banner.lost{border-color:var(--danger)}
-.banner strong{font-family:var(--display);font-size:18px}
-.banner.won strong{color:var(--good)}
-.banner.lost strong{color:var(--danger)}
-.banner .row{gap:8px}
-
-.seats{display:grid;grid-template-columns:minmax(0,1.3fr) minmax(0,.9fr) minmax(0,1.2fr);gap:18px;align-items:start}
-.seats.single{grid-template-columns:minmax(0,760px);justify-content:center}
-@media (max-width:1150px){
-  .seats:not(.single){grid-template-columns:minmax(0,1fr) minmax(0,1fr)}
-  .seats:not(.single) .seat-past{grid-column:1 / -1}
-}
-@media (max-width:720px){
-  .seats:not(.single){grid-template-columns:minmax(0,1fr)}
-}
-.seat{background:var(--panel);border:2px solid var(--line);border-top-width:5px;box-shadow:0 6px 0 var(--shadow);display:flex;flex-direction:column;min-width:0}
+.seats{flex:1;min-height:0;padding:12px 16px 16px;display:grid;gap:14px;grid-template-columns:minmax(0,1.25fr) minmax(0,.95fr) minmax(0,1.2fr)}
+.seats.single{grid-template-columns:minmax(0,1fr)}
+.seat{background:var(--panel);border:2px solid var(--line);border-top-width:5px;box-shadow:0 6px 0 var(--shadow);display:flex;flex-direction:column;min-width:0;min-height:0}
 .seat-past{border-top-color:var(--past)}
 .seat-present{border-top-color:var(--present)}
 .seat-future{border-top-color:var(--future)}
-.seat-head{display:flex;flex-wrap:wrap;align-items:baseline;gap:4px 10px;padding:10px 14px;border-bottom:2px solid var(--line);background:var(--panel-2)}
-.seat-name{font-family:var(--display);font-size:20px;font-weight:700;line-height:1.1}
+.seat-head{flex:none;display:flex;flex-wrap:wrap;align-items:baseline;gap:4px 12px;padding:8px 14px;border-bottom:2px solid var(--line);background:var(--panel-2)}
+.seat-name{font-family:var(--display);font-size:18px;font-weight:700;line-height:1.1}
 .seat-past .seat-name{color:var(--past)}
 .seat-present .seat-name{color:var(--present)}
 .seat-future .seat-name{color:var(--future)}
-.seat-rule{font-size:13.5px;color:var(--muted)}
-.seat-body{padding:14px;display:flex;flex-direction:column;gap:12px;min-width:0}
+.seat-rule{font-size:13px;color:var(--muted)}
+.seat-head .tense{margin-left:auto}
+.seat-body{flex:1;min-height:0;overflow:auto;padding:12px;display:flex;flex-direction:column;gap:12px}
+.col{display:flex;flex-direction:column;gap:12px;min-width:0;min-height:0}
+.view{min-height:0;display:grid;place-items:center;overflow:hidden}
+.seats:not(.single) .seat-body > *{flex:none}
+
+/* One seat on screen: each seat gets a layout that uses the whole window */
+.seats.single .seat-body{display:grid;gap:16px;overflow:hidden;padding:14px}
+.seats.single .seat-past .seat-body{grid-template-columns:minmax(0,1fr) minmax(260px,320px);grid-template-rows:minmax(0,1fr)}
+.seats.single .seat-present .seat-body{grid-template-columns:minmax(0,1fr) minmax(280px,340px);grid-template-rows:minmax(0,1fr)}
+.seats.single .seat-future .seat-body{grid-template-columns:minmax(300px,.85fr) minmax(0,1.15fr);grid-template-rows:minmax(0,1fr)}
+.seats.single .col{overflow:auto;padding-right:2px}
+.seats.single .view{height:100%}
+.seats.single .present-side{justify-content:center}
+.seats.single .journal{height:100%;min-height:0}
+.seats.single .book{flex:1;min-height:0}
+.seats.single .book .page{min-height:0;height:100%}
+.seats.single .polaroid{width:min(100%,260px)}
+.seats.single .page .hand.small,.seats.single .page .note-text{font-size:20px}
+.seats.single .present-wrap{max-width:none;margin:0}
+@media (max-width:860px){
+  html,body{height:auto}
+  .game{height:auto;min-height:100%}
+  .seats,.seats.single{grid-template-columns:minmax(0,1fr)}
+  .seats.single .seat-body,.seats .seat-body{display:flex;flex-direction:column;overflow:visible}
+  .seats.single .col{overflow:visible}
+  .seats.single .book .page{min-height:330px;height:auto}
+}
+@media (min-width:861px) and (max-width:1180px){
+  .seats:not(.single){grid-template-columns:minmax(0,1fr) minmax(0,1fr)}
+  .seats:not(.single) .seat-past{grid-column:1 / -1;min-height:420px}
+  .game{height:auto;min-height:100%}
+  html,body{height:auto}
+}
+
+/* Overlays inside the game: briefing and end of level */
+.overlay{position:fixed;inset:0;z-index:20;display:flex;align-items:center;justify-content:center;padding:16px;background:rgba(10,9,14,.66)}
+.card{width:min(100%,620px);background:var(--panel);border:2px solid var(--line);border-top:6px solid var(--present);box-shadow:0 8px 0 var(--shadow);padding:18px 20px;display:flex;flex-direction:column;gap:12px;max-height:100%;overflow:auto}
+.card .eyebrow{margin:0;font-family:var(--mono);font-size:12px;letter-spacing:.14em;text-transform:uppercase;color:var(--muted)}
+.card h2{margin:0;font-family:var(--display);font-size:22px;line-height:1.15;font-weight:400;text-wrap:balance}
+.card p{margin:0;max-width:62ch}
+.card ul{margin:0;padding-left:18px;display:flex;flex-direction:column;gap:6px;max-width:62ch}
+.card li::marker{color:var(--present)}
+.card .row{display:flex;flex-wrap:wrap;gap:8px;justify-content:flex-end}
+.card.won{border-top-color:var(--good)}
+.card.won h2{color:var(--good)}
+.card.lost{border-top-color:var(--danger)}
+.card.lost h2{color:var(--danger)}
+.card .seat-tip{border-left:3px solid var(--present);padding:6px 10px;background:var(--bg);font-size:14px}
+
+/* ---------- Stage select ---------- */
+.stages{position:fixed;inset:0;z-index:60;overflow:auto;background-color:var(--bg);
+  background-image:linear-gradient(var(--grid) 2px, transparent 2px),linear-gradient(90deg, var(--grid) 2px, transparent 2px);background-size:56px 56px}
+.stages-in{max-width:1380px;margin:0 auto;padding-block:20px 120px;padding-inline:16px;display:flex;flex-direction:column;gap:16px}
+.stages-top{display:flex;flex-wrap:wrap;gap:10px 20px;align-items:flex-end;justify-content:space-between}
+.stages-top h2{margin:0;font-family:var(--display);font-weight:400;font-size:clamp(24px,3.6vw,36px);line-height:1}
+.stages-top p{margin:6px 0 0;color:var(--muted);max-width:60ch}
+.chapters{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,300px),1fr));gap:14px}
+.chapter{background:var(--panel);border:2px solid var(--line);box-shadow:0 5px 0 var(--shadow);padding:12px;display:flex;flex-direction:column;gap:10px;min-width:0}
+.chapter-head{display:grid;grid-template-columns:auto minmax(0,1fr);gap:4px 10px;align-items:center}
+.chapter-head .sw{width:30px;height:30px;display:flex;align-items:center;justify-content:center;font-family:var(--display);font-size:14px;color:#16141c;box-shadow:inset -4px -4px 0 rgba(0,0,0,.25)}
+.chapter-head h3{margin:0;font-family:var(--display);font-weight:400;font-size:16px;line-height:1.15}
+.chapter-head p{grid-column:1 / -1;margin:0;font-size:13px;color:var(--muted)}
+.tiles{display:flex;flex-direction:column;gap:8px}
+.tile{display:grid;grid-template-columns:auto minmax(0,1fr);gap:4px 12px;align-items:center;text-align:left;background:var(--bg);border:2px solid var(--line);padding:8px;cursor:pointer}
+.tile:hover{border-color:var(--muted)}
+.tile[aria-pressed="true"]{border-color:var(--present);background:var(--panel-2);box-shadow:0 0 0 2px rgba(242,193,78,.25)}
+.tile canvas{display:block;image-rendering:pixelated;grid-row:span 3;background:#0c0b10}
+.tile .tcode{font-family:var(--mono);font-size:11.5px;color:var(--muted)}
+.tile .tname{font-family:var(--display);font-size:13.5px;line-height:1.2}
+.tile .tmeta{font-size:12px;color:var(--muted)}
+.tile .ok{color:var(--good);font-family:var(--display);font-size:11px}
+.stages-foot{position:fixed;left:0;right:0;bottom:0;z-index:61;background:var(--panel);border-top:2px solid var(--line);box-shadow:0 -4px 0 var(--shadow);padding:12px 16px calc(12px + env(safe-area-inset-bottom, 0px))}
+.stages-foot-in{max-width:1380px;margin:0 auto;display:flex;flex-wrap:wrap;gap:10px 18px;align-items:center}
+.stages-foot .sel{min-width:0;flex:1 1 320px}
+.stages-foot .sel b{font-family:var(--display);font-weight:400;font-size:15px;display:block}
+.stages-foot .sel span{font-size:13.5px;color:var(--muted);display:block;max-width:80ch}
+.stages-foot .warnline{color:var(--danger)}
+.stages-foot .btn{font-size:13px;padding:10px 16px}
+
+/* ---------- Main menu (inside the cinematic frame) ---------- */
+.menu-tag{margin:0;font-family:var(--body);font-size:15px;color:#aab8e6;text-align:center;max-width:44ch;opacity:0;animation:cineFade .7s ease 1.1s forwards}
+.menu-box{display:flex;flex-direction:column;align-items:center;gap:14px;width:min(100%,440px);opacity:0;animation:cineFade .7s ease 1.3s forwards}
+.menu-box .nick{width:100%;font-family:var(--display);font-size:18px;letter-spacing:.04em;text-align:center;background:#000;color:#e9eeff;border:2px solid var(--cine-blue);padding:9px 12px}
+.menu-box .nick::placeholder{color:#4a5a86}
+.menu-box label{font-size:14px;color:#aab8e6}
+.menu-row{display:flex;gap:8px;width:100%;flex-wrap:wrap;justify-content:center}
+.menu-row .cine-btn{flex:1 1 auto}
+.menu-row .code{width:7em;font-family:var(--display);font-size:16px;letter-spacing:.2em;text-transform:uppercase;text-align:center;background:#000;color:#e9eeff;border:2px solid #26314f;padding:8px 10px}
+.menu-row .code:focus,.menu-box .nick:focus{outline:none;border-color:#7aa0ff;box-shadow:0 0 0 3px rgba(58,116,255,.3)}
+.menu-or{font-family:var(--mono);font-size:11px;letter-spacing:.2em;color:#4a5a86;text-transform:uppercase}
+.howto-box{width:min(100%,760px);display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,210px),1fr));gap:12px;text-align:left}
+.howto-box div{border:2px solid #26314f;padding:10px 12px;background:#000}
+.howto-box h3{margin:0 0 4px;font-family:var(--display);font-weight:400;font-size:13px;color:#e9eeff}
+.howto-box p{margin:0;font-size:13.5px;color:#aab8e6}
+.cine-stage-line{margin:0;font-family:var(--mono);font-size:13px;color:#aab8e6;text-align:center}
+.cine-stage-line b{font-family:var(--display);font-weight:400;color:#e9eeff;font-size:15px}
+
 .tense{font-family:var(--mono);font-size:12px;color:var(--muted)}
 .tense b{font-weight:700}
 .seat-past .tense b{color:var(--past)}
@@ -155,9 +207,10 @@ button{font:inherit;color:inherit}
 .seat-future .tense b{color:var(--future)}
 
 .canvas-wrap{width:100%;min-width:0;display:flex;justify-content:center}
+.view canvas{display:block;image-rendering:pixelated;max-width:100%}
 .canvas-wrap canvas{display:block;image-rendering:pixelated;max-width:100%}
 #pastCanvas{filter:sepia(.5) saturate(.72) brightness(.96)}
-.present-wrap{max-width:380px;margin:0 auto}
+.present-wrap{max-width:380px;width:100%;margin:0 auto}
 .readout{display:flex;flex-wrap:wrap;gap:6px 14px;align-items:center;font-family:var(--mono);font-size:13px;color:var(--muted)}
 .readout b{color:var(--text);font-variant-numeric:tabular-nums}
 
@@ -228,12 +281,7 @@ button{font:inherit;color:inherit}
 .mirror-box{border:2px solid var(--future);background:var(--bg);padding:10px;display:flex;flex-direction:column;gap:8px}
 .mirror-box .canvas-wrap{max-width:240px;margin:0 auto}
 
-.howto{background:var(--panel);border:2px solid var(--line);padding:12px 16px}
-.howto summary{cursor:pointer;font-family:var(--display);font-size:14px}
-.howto .cols{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,260px),1fr));gap:14px;margin-top:12px}
-.howto h3{font-family:var(--display);font-size:13px;margin:0 0 4px}
-.howto p,.howto ul{margin:0;font-size:14px;color:var(--muted);max-width:62ch}
-.howto ul{padding-left:18px}
+
 
 .stepper{display:inline-flex;align-items:center;gap:6px;font-family:var(--mono);font-size:12px;color:var(--muted)}
 .stepper button{width:26px;height:26px;padding:0;font-family:var(--display);font-size:14px;background:var(--panel-2);color:var(--past);border:2px solid var(--line);cursor:pointer}
@@ -280,8 +328,8 @@ button{font:inherit;color:inherit}
 /* Cinematic seat picker */
 .cine{position:fixed;inset:0;z-index:50;background:var(--cine-black);display:flex;align-items:center;justify-content:center;padding:16px;transition:opacity .6s ease}
 .cine.leaving{opacity:0}
-.cine-frame{position:relative;width:min(100%,980px);min-height:min(92vh,640px);border:2px solid var(--cine-blue);box-shadow:0 0 0 6px var(--cine-black),0 0 0 8px rgba(58,116,255,.35),0 0 60px var(--cine-glow),inset 0 0 60px rgba(58,116,255,.12);
-  display:flex;flex-direction:column;align-items:center;justify-content:center;gap:clamp(24px,5vh,48px);padding:32px 16px;overflow:hidden}
+.cine-frame{position:relative;width:min(100%,980px);min-height:min(92vh,640px);max-height:100%;overflow-y:auto;overflow-x:hidden;border:2px solid var(--cine-blue);box-shadow:0 0 0 6px var(--cine-black),0 0 0 8px rgba(58,116,255,.35),0 0 60px var(--cine-glow),inset 0 0 60px rgba(58,116,255,.12);
+  display:flex;flex-direction:column;align-items:center;justify-content:center;gap:clamp(24px,5vh,48px);padding:32px 16px}
 .cine-room{margin:0;font-family:var(--mono);font-size:12px;letter-spacing:.2em;text-transform:uppercase;color:var(--cine-blue);opacity:0;animation:cineFade .8s ease .2s forwards}
 .cine-title{margin:0;font-family:var(--display);font-weight:400;font-size:clamp(28px,6vw,58px);color:#e9eeff;letter-spacing:.04em;text-align:center;text-shadow:0 0 18px var(--cine-glow)}
 .cine-title .ch{opacity:0;display:inline-block;animation:cineFade .25s ease forwards}
@@ -338,7 +386,9 @@ button{font:inherit;color:inherit}
 .cine-hint,.cine-status{margin:0;font-family:var(--body);font-size:14px;color:#aab8e6;text-align:center;max-width:46ch}
 .cine-status{font-size:15px;color:#cfd9ff}
 .cine-foot{margin:0;display:flex;flex-direction:column;align-items:center;gap:12px;opacity:0;animation:cineFade .8s ease 3s forwards;max-width:100%}
-.cine[data-stage="lobby"] .cine-foot,.cine[data-stage="name"] .cine-foot{animation-delay:1.4s}
+.cine[data-stage="lobby"] .cine-foot,.cine[data-stage="name"] .cine-foot,.cine[data-stage="menu"] .cine-foot{animation-delay:1.4s}
+.cine[data-stage="menu"] .cine-cards,.cine[data-stage="name"] .cine-cards,.cine[data-stage="lobby"] .cine-cards{flex-direction:column;align-items:center;gap:18px;padding-inline:0;width:100%}
+.cine[data-stage="menu"] .cine-frame{gap:clamp(16px,3.4vh,32px)}
 .linkish{background:none;border:0;padding:4px;color:#8ea7e8;font-family:var(--mono);font-size:12px;text-decoration:underline;text-underline-offset:3px;cursor:pointer}
 .cine-invite{display:flex;gap:8px;align-items:center;flex-wrap:wrap;justify-content:center;max-width:100%}
 .cine-invite input{width:min(70vw,380px);font-family:var(--mono);font-size:12px;background:#000;color:#cfd9ff;border:2px solid #26314f;padding:6px 8px}
@@ -355,90 +405,47 @@ button{font:inherit;color:inherit}
 </style>
 </head>
 <body>
-<div class="app">
-  <header class="top">
-    <div>
-      <h1>Time<span class="glass">Linked</span></h1>
-      <p class="tag">One adventurer, three players, three moments in time, linked. Past knows where. Future knows when. Present is the only one who can act.</p>
-    </div>
-    <div class="top-actions">
+<div class="game" id="game">
+  <header class="bar">
+    <span class="logo">Time<b>Linked</b></span>
+    <span class="bar-sw" id="barSw">1</span>
+    <span class="bar-level"><b id="barLevel">1-1 · Gatehouse</b><small id="barChapter">Hourglass Keep</small></span>
+    <span class="bar-room" id="barRoom" hidden></span>
+    <div class="bar-actions">
       <div class="seg" id="seatFilter" aria-label="Which seats to show">
-        <button type="button" data-seat="all" aria-pressed="true">All seats</button>
+        <button type="button" data-seat="all" aria-pressed="true">All</button>
         <button type="button" data-seat="past" aria-pressed="false">Past</button>
         <button type="button" data-seat="present" aria-pressed="false">Present</button>
         <button type="button" data-seat="future" aria-pressed="false">Future</button>
       </div>
+      <button type="button" class="btn" id="briefBtn">Briefing</button>
+      <button type="button" class="btn" id="stagesBtn">Stages</button>
       <button type="button" class="btn" id="restartBtn">Restart</button>
-      <button type="button" class="btn" id="onlineBtn" aria-expanded="false">Play online</button>
+      <button type="button" class="btn" id="switchSeatBtn" hidden>Switch seat</button>
+      <button type="button" class="btn" id="copyInvite" hidden>Copy invite</button>
+      <button type="button" class="btn" id="menuBtn">Menu</button>
     </div>
   </header>
-
-  <nav class="levels" id="levels" aria-label="Chapters"></nav>
-
-  <section class="online" id="onlinePanel" hidden>
-    <div id="onlineSetup" style="display:flex;flex-direction:column;gap:12px">
-      <h2>Play online</h2>
-      <p class="note" id="onlineNote"></p>
-      <div class="row">
-        <label for="nickInput" class="note">Nickname</label>
-        <input class="code-input nick" id="nickInput" maxlength="16" autocomplete="nickname" placeholder="Your name">
-      </div>
-      <div class="row">
-        <button type="button" class="btn primary" id="createBtn">Create room</button>
-        <span class="note">or join one:</span>
-        <input class="code-input" id="codeInput" maxlength="4" placeholder="CODE" autocomplete="off" aria-label="Room code">
-        <button type="button" class="btn" id="joinBtn">Join</button>
-      </div>
-      <p class="err" id="onlineErr" role="alert"></p>
-    </div>
-    <div id="onlineLive" style="display:flex;flex-direction:column;gap:10px" hidden>
-      <div class="row">
-        <span>Room <b class="chip" id="roomCode">----</b></span>
-        <span>You are <b id="mySeatLabel"></b></span>
-        <span id="presence" class="row" style="gap:6px"></span>
-        <button type="button" class="btn" id="switchSeatBtn">Switch seat</button>
-        <button type="button" class="btn" id="leaveBtn">Leave room</button>
-      </div>
-      <div class="invite">
-        <input id="inviteLink" readonly aria-label="Invite link">
-        <button type="button" class="btn" id="copyInvite">Copy invite link</button>
-      </div>
-      <p class="err" id="liveErr" role="alert"></p>
-    </div>
-  </section>
-
-  <section class="brief" id="brief" aria-live="polite">
-    <div><h2 id="briefName"></h2><p class="scene" id="briefScene"></p></div>
-    <ul id="briefList"></ul>
-  </section>
-
-  <div class="modebar" id="modeBar"></div>
-
-  <div class="banner" id="banner" hidden>
-    <div><strong id="bannerTitle"></strong><div id="bannerText"></div></div>
-    <div class="row">
-      <button type="button" class="btn" id="bannerRestart">Play again</button>
-      <button type="button" class="btn primary" id="bannerNext">Next chapter</button>
-    </div>
-  </div>
 
   <main class="seats" id="seats">
     <section class="seat seat-past" data-seat="past" aria-label="Past seat">
       <header class="seat-head">
         <span class="seat-name">Past</span>
-        <span class="seat-rule">Sees the whole map, but two turns late.</span>
+        <span class="seat-rule">Sees the whole map, but 2 turns late.</span>
+        <span class="tense">Speak in <b>past tense</b>: "You walked into the red hall."</span>
       </header>
       <div class="seat-body">
-        <div class="readout" style="justify-content:space-between">
-          <span>Echo of turn <b id="pastTurn">0</b></span>
-          <span class="stepper" role="group" aria-label="How many turns behind Past sees">Turns behind
-            <button type="button" id="delayDown" aria-label="Fewer turns behind">−</button><b id="delayVal">2</b><button type="button" id="delayUp" aria-label="More turns behind">+</button>
-          </span>
+        <div class="view" id="pastWrap"><canvas id="pastCanvas" aria-label="Map as it was a few turns ago"></canvas></div>
+        <div class="col">
+          <div class="readout" style="justify-content:space-between">
+            <span>Echo of turn <b id="pastTurn">0</b></span>
+            <span class="stepper" role="group" aria-label="How many turns behind Past sees">Turns behind
+              <button type="button" id="delayDown" aria-label="Fewer turns behind">−</button><b id="delayVal">2</b><button type="button" id="delayUp" aria-label="More turns behind">+</button>
+            </span>
+          </div>
+          <p class="section-label">What happened</p>
+          <ol class="log" id="pastLog"></ol>
         </div>
-        <span class="tense">Speak in <b>past tense</b>: "You walked into the red hall."</span>
-        <div class="canvas-wrap" id="pastWrap"><canvas id="pastCanvas" aria-label="Map as it was two turns ago"></canvas></div>
-        <p class="section-label">What happened</p>
-        <ol class="log" id="pastLog"></ol>
       </div>
     </section>
 
@@ -446,27 +453,29 @@ button{font:inherit;color:inherit}
       <header class="seat-head">
         <span class="seat-name">Present</span>
         <span class="seat-rule">Moves the hero. Sees one step around, right now.</span>
+        <span class="tense">Speak in <b>present tense</b>: "I'm standing on red stone."</span>
       </header>
       <div class="seat-body">
-        <span class="tense">Speak in <b>present tense</b>: "I'm standing on red stone."</span>
-        <div class="canvas-wrap present-wrap" id="presentWrap"><canvas id="presentCanvas" aria-label="The hero's surroundings"></canvas></div>
-        <div class="hud">
-          <span class="readout">Turn <b id="turnNow">0</b></span>
-          <span class="hearts" id="hearts" aria-label="Hearts"></span>
-          <span class="keychip" id="keyChip">No key</span>
-          <span class="keychip shard" id="shardChip" hidden>Shards 0</span>
+        <div class="view present-wrap" id="presentWrap"><canvas id="presentCanvas" aria-label="The hero's surroundings"></canvas></div>
+        <div class="col present-side">
+          <div class="hud">
+            <span class="readout">Turn <b id="turnNow">0</b></span>
+            <span class="hearts" id="hearts" aria-label="Hearts"></span>
+            <span class="keychip" id="keyChip">No key</span>
+            <span class="keychip shard" id="shardChip" hidden>Shards 0</span>
+          </div>
+          <p class="msg" id="presentMsg" aria-live="polite"></p>
+          <div class="dpad" id="dpad">
+            <button type="button" class="btn up" data-move="U" aria-label="Move up">▲</button>
+            <button type="button" class="btn left" data-move="L" aria-label="Move left">◀</button>
+            <button type="button" class="btn wait" data-move="W" aria-label="Wait one turn">WAIT</button>
+            <button type="button" class="btn right" data-move="R" aria-label="Move right">▶</button>
+            <button type="button" class="btn down" data-move="D" aria-label="Move down">▼</button>
+          </div>
+          <button type="button" class="btn violet mirror-btn" id="mirrorBtn" data-move="V" hidden>Raise mirror shard (M)</button>
+          <p class="hint" id="presentHint">Arrow keys or WASD to move. Space to wait.</p>
+          <p class="locked-note" id="presentLocked" hidden>Only the Present player can move the hero.</p>
         </div>
-        <p class="msg" id="presentMsg" aria-live="polite"></p>
-        <div class="dpad" id="dpad">
-          <button type="button" class="btn up" data-move="U" aria-label="Move up">▲</button>
-          <button type="button" class="btn left" data-move="L" aria-label="Move left">◀</button>
-          <button type="button" class="btn wait" data-move="W" aria-label="Wait one turn">WAIT</button>
-          <button type="button" class="btn right" data-move="R" aria-label="Move right">▶</button>
-          <button type="button" class="btn down" data-move="D" aria-label="Move down">▼</button>
-        </div>
-        <button type="button" class="btn violet mirror-btn" id="mirrorBtn" data-move="V" hidden>Raise mirror shard (M)</button>
-        <p class="hint" id="presentHint">Arrow keys or WASD to move. Space to wait.</p>
-        <p class="locked-note" id="presentLocked" hidden>Only the Present player can move the hero.</p>
       </div>
     </section>
 
@@ -474,21 +483,27 @@ button{font:inherit;color:inherit}
       <header class="seat-head">
         <span class="seat-name">Future</span>
         <span class="seat-rule">Sees what is coming. Never sees the map.</span>
+        <span class="tense">Speak in <b>future tense</b>: "The green door will open in 3 turns."</span>
       </header>
       <div class="seat-body">
-        <span class="tense">Speak in <b>future tense</b>: "The green door will open in 3 turns."</span>
-        <div class="future-now">
-          <span class="big-turn">Turn <span id="futureTurn">0</span></span>
-          <span class="doom" id="doom"></span>
+        <div class="col">
+          <div class="future-now">
+            <span class="big-turn">Turn <span id="futureTurn">0</span></span>
+            <span class="doom" id="doom"></span>
+          </div>
+          <div class="mirror-box" id="mirrorBox" hidden>
+            <p class="section-label" id="mirrorLabel">Mirror</p>
+            <div class="canvas-wrap" id="mirrorWrap"><canvas id="mirrorCanvas" aria-label="What the hero sees right now"></canvas></div>
+          </div>
+          <p class="section-label">Next 10 turns</p>
+          <div class="timeline-wrap"><table class="timeline" id="timeline"></table></div>
+          <div class="legend" id="legend"></div>
+          <ol class="upcoming" id="upcoming"></ol>
+          <div class="prophecy">
+            <h3>Prophecy</h3>
+            <ul id="prophecy"></ul>
+          </div>
         </div>
-        <div class="mirror-box" id="mirrorBox" hidden>
-          <p class="section-label" id="mirrorLabel">Mirror</p>
-          <div class="canvas-wrap" id="mirrorWrap"><canvas id="mirrorCanvas" aria-label="What the hero sees right now"></canvas></div>
-        </div>
-        <p class="section-label">Next 10 turns</p>
-        <div class="timeline-wrap"><table class="timeline" id="timeline"></table></div>
-        <div class="legend" id="legend"></div>
-        <ol class="upcoming" id="upcoming"></ol>
         <div id="albumBox" class="journal">
           <div class="album-head">
             <p class="section-label">Future's journal</p>
@@ -505,32 +520,56 @@ button{font:inherit;color:inherit}
             <button type="button" class="btn" id="pgNext">Turn page ▶</button>
           </div>
         </div>
-        <div class="prophecy">
-          <h3>Prophecy</h3>
-          <ul id="prophecy"></ul>
-        </div>
       </div>
     </section>
   </main>
+</div>
 
-  <details class="howto" id="howto">
-    <summary>How to play</summary>
-    <div class="cols">
-      <div><h3>The setup</h3><p>Three players share one hero. Sit apart, or play on three devices, and talk out loud. Nobody can see another player's screen.</p></div>
-      <div><h3>Past</h3><p>Sees the full map with room names, but everything is two turns old. Knows where things are, not when.</p></div>
-      <div><h3>Present</h3><p>The only one who can move. Sees one step in every direction and nothing else. Knows what is under their feet right now.</p></div>
-      <div><h3>Future</h3><p>Knows when doors open, when hazards fire and where the guard will be. Keeps a journal of photos (shuffled every run) and the prophecy. Never sees the map unless Present raises a mirror shard.</p></div>
-      <div><h3>Photographs</h3><p>Each photo shows the 3×3 view from one exact spot, with brackets marking the spot. Present describes what they see, Past names the room, and Future dives in when it matches. A wrong dive costs 1 focus.</p></div>
-      <div><h3>Playing together</h3><p>Click Play online, pick a nickname, create a room and send the invite link. Everyone gathers in the waiting room; when the host starts, everyone is asked who they are at the same moment. Past can choose how many turns behind they see.</p></div>
-      <div><h3>House rule</h3><p>Each player may only speak in their own tense. Slip up and Present presses Wait once.</p></div>
+<div class="overlay" id="briefOverlay" hidden>
+  <section class="card" role="dialog" aria-modal="true" aria-labelledby="briefTitle" id="briefCard">
+    <p class="eyebrow" id="briefEyebrow"></p>
+    <h2 id="briefTitle"></h2>
+    <p id="briefScene"></p>
+    <ul id="briefList"></ul>
+    <p class="seat-tip" id="briefSeat" hidden></p>
+    <div class="row"><button type="button" class="btn primary" id="briefOk">Ready</button></div>
+  </section>
+</div>
+
+<div class="overlay" id="endOverlay" hidden>
+  <section class="card" role="dialog" aria-modal="true" aria-labelledby="endTitle" id="endCard">
+    <p class="eyebrow" id="endEyebrow"></p>
+    <h2 id="endTitle"></h2>
+    <p id="endText"></p>
+    <div class="row">
+      <button type="button" class="btn" id="endStages">Stages</button>
+      <button type="button" class="btn" id="endRestart">Play again</button>
+      <button type="button" class="btn primary" id="endNext">Next level</button>
     </div>
-  </details>
+    <p class="note" id="endNote" style="color:var(--muted);font-size:13.5px" hidden></p>
+  </section>
+</div>
+
+<div class="stages" id="stages" hidden>
+  <div class="stages-in">
+    <div class="stages-top">
+      <div><h2>Choose a stage</h2><p id="stagesSub"></p></div>
+      <button type="button" class="btn" id="stagesBack">◀ Back</button>
+    </div>
+    <div class="chapters" id="chapters"></div>
+  </div>
+  <div class="stages-foot">
+    <div class="stages-foot-in">
+      <div class="sel"><b id="selName"></b><span id="selText"></span></div>
+      <button type="button" class="btn primary" id="stagesGo">Continue</button>
+    </div>
+  </div>
 </div>
 
 <div class="cine" id="cine" role="dialog" aria-modal="true" aria-labelledby="cineTitle" hidden>
   <div class="cine-frame">
     <p class="cine-room" id="cineRoom"></p>
-    <h2 class="cine-title" id="cineTitle" aria-label="Who are you..."></h2>
+    <h2 class="cine-title" id="cineTitle" aria-label="TimeLinked"></h2>
     <div class="cine-cards" id="cineCards"></div>
     <div class="cine-foot" id="cineFoot"></div>
   </div>
@@ -1719,10 +1758,12 @@ function drawWorld(ctx,st,cam){
   }
 }
 
-function sizeCanvas(cv,wrap,cols,rows,maxW){
+function sizeCanvas(cv,wrap,cols,rows,maxW,fitH){
   const avail = Math.min(wrap.clientWidth, maxW || Infinity);
   if (!avail) return null;
-  const ts = Math.max(8, Math.floor(avail/cols));
+  let ts = Math.floor(avail/cols);
+  if (fitH){ const hh = wrap.clientHeight; if (hh > 60) ts = Math.min(ts, Math.floor(hh/(rows+0.3))); }
+  ts = Math.max(8, ts);
   const h = Math.round(ts*0.3);
   const cw = ts*cols, chh = ts*rows + h;
   const dpr = window.devicePixelRatio || 1;
@@ -1736,8 +1777,8 @@ function sizeCanvas(cv,wrap,cols,rows,maxW){
   return {ctx,ts,h,cw,ch:chh};
 }
 
-function drawFullMap(cv,wrap,st){
-  const s = sizeCanvas(cv,wrap,LV.W,LV.H);
+function drawFullMap(cv,wrap,st,fitH){
+  const s = sizeCanvas(cv,wrap,LV.W,LV.H,0,fitH);
   if (!s) return;
   const {ctx,ts,h} = s;
   ctx.fillStyle = SC().void; ctx.fillRect(0,0,s.cw,s.ch);
@@ -1757,8 +1798,8 @@ function drawFullMap(cv,wrap,st){
   }
 }
 
-function drawLocalView(cv,wrap,st,maxW){
-  const s = sizeCanvas(cv,wrap,5,5,maxW);
+function drawLocalView(cv,wrap,st,maxW,fitH){
+  const s = sizeCanvas(cv,wrap,5,5,maxW,fitH);
   if (!s) return;
   const {ctx,ts,h} = s;
   ctx.fillStyle = '#0b0a0f'; ctx.fillRect(0,0,s.cw,s.ch);
@@ -1796,6 +1837,23 @@ function drawPhoto(cv,wrap,p){
   }
 }
 
+/* Small map preview for the stage-select page */
+function drawThumb(cv, level, ts){
+  const saved = LV;
+  LV = level;
+  try {
+    const h = Math.round(ts*0.3), cw = ts*LV.W, chh = ts*LV.H + h;
+    const dpr = window.devicePixelRatio || 1;
+    cv.width = Math.round(cw*dpr); cv.height = Math.round(chh*dpr);
+    cv.style.width = cw+'px'; cv.style.height = chh+'px';
+    const ctx = cv.getContext('2d');
+    ctx.setTransform(dpr,0,0,dpr,0,0);
+    ctx.imageSmoothingEnabled = false;
+    ctx.fillStyle = SC().void; ctx.fillRect(0,0,cw,chh);
+    drawWorld(ctx, initState(), {x0:0,y0:0,cols:LV.W,rows:LV.H,ts,h,vis:()=>true});
+  } finally { LV = saved; }
+}
+
 /* ===== App state ===== */
 const $ = id => document.getElementById(id);
 const ACCENT = {keep:'#d8a836', studio:'#c8443a', frost:'#a9d6ea', museum:'#7fa6db'};
@@ -1806,15 +1864,21 @@ let pastDelay = 2;
 let states = [];
 let filter = 'all';
 let online = null; // see the Online section
+let endDismissed = false;
 const journal = {pages:[], labels:{}, spread:0, busy:false};
 const hot = window.claude && window.claude.hot;
 
 function current(){ return states[states.length-1]; }
 function isSeat(s){ return !online || online.seat===s; }
 function cineOpen(){ return !$('cine').hidden; }
-function canMove(){ return !cineOpen() && current().status==='playing' && isSeat('present'); }
+function gameVisible(){ return $('cine').hidden && $('stages').hidden; }
+function canMove(){ return gameVisible() && current().status==='playing' && isSeat('present'); }
 function canDive(){ return current().status==='playing' && isSeat('future'); }
+function isHost(){ return !online || (!!online.room && hostId()===online.me); }
+function canRestart(){ return !online || isSeat('present') || isHost(); }
+function fitH(){ return $('seats').classList.contains('single') && window.innerWidth>860; }
 function cap(s){ return s[0].toUpperCase()+s.slice(1); }
+function stripTags(h){ const d = document.createElement('div'); d.innerHTML = h; return d.textContent; }
 
 /* ===== Progress (this browser only) ===== */
 function loadCleared(){ try { return JSON.parse(localStorage.getItem('tl-cleared') || '[]'); } catch(e){ return []; } }
@@ -1823,52 +1887,11 @@ function markCleared(id){
     const c = new Set(loadCleared());
     if (c.has(id)) return;
     c.add(id); localStorage.setItem('tl-cleared', JSON.stringify([...c]));
-    buildLevelCards();
   } catch(e){}
-}
-
-/* ===== Chapter + level picker ===== */
-function buildLevelCards(){
-  const cleared = new Set(loadCleared());
-  $('levels').innerHTML = CHAPTERS.map((c,ci) => {
-    const pips = LEVELS.map((L,i) => [L,i]).filter(([L]) => L.ci===ci).map(([L,i]) =>
-      '<button type="button" class="pip" data-level="'+i+'" aria-pressed="'+(i===levelIdx)+'">'+L.code+' '+L.name+
-      (cleared.has(L.id) ? ' <span class="ok" aria-label="cleared">✓</span>' : '')+'</button>').join('');
-    return '<div class="chap'+(LV.ci===ci?' on':'')+'">' +
-      '<span class="sw" style="background:'+ACCENT[c.scene]+'">'+c.num+'</span>' +
-      '<span class="nm">'+c.name+'</span>' +
-      '<span class="tags">'+c.tags.map(t => '<span>'+t+'</span>').join('')+'</span>' +
-      '<div class="pips">'+pips+'</div></div>';
-  }).join('');
-  const locked = !!online && online.seat!=='present';
-  document.querySelectorAll('.pip').forEach(b => { b.disabled = locked; if (locked) b.title = 'Only the Present player picks the level'; });
-}
-let armedLevel = null, armTimer = null;
-$('levels').addEventListener('click', e => {
-  const b = e.target.closest('.pip'); if (!b || b.disabled) return;
-  const i = +b.dataset.level;
-  if (i===levelIdx && !moves) return;
-  const inProgress = moves.length>0 && current().status==='playing';
-  if (inProgress && armedLevel!==i){
-    disarm();
-    armedLevel = i; b.classList.add('armed'); b.dataset.label = b.innerHTML; b.textContent = 'Leave this run?';
-    armTimer = setTimeout(disarm, 2500);
-    return;
-  }
-  disarm();
-  setLevel(i, true);
-});
-function disarm(){
-  clearTimeout(armTimer); armedLevel = null;
-  document.querySelectorAll('.pip.armed').forEach(b => { b.classList.remove('armed'); if (b.dataset.label) b.innerHTML = b.dataset.label; });
 }
 
 /* ===== Per-level UI ===== */
 function buildLevelUI(){
-  $('briefName').textContent = 'Level '+LV.code+' · '+LV.name;
-  $('briefScene').textContent = 'Chapter '+LV.num+' · '+LV.chapter.name+'. '+LV.tagline;
-  $('briefList').innerHTML = LV.brief.map(b => '<li>'+b+'</li>').join('');
-  $('brief').style.borderLeftColor = ACCENT[LV.scene];
   $('prophecy').innerHTML = LV.prophecy.map(p => '<li>'+p+'</li>').join('');
   const lg = [];
   const firstTimed = Object.values(LV.doors).find(d => d.kind==='timed');
@@ -1880,9 +1903,60 @@ function buildLevelUI(){
   $('albumBox').hidden = !LV.photos.length;
   $('mirrorBtn').hidden = !LV.shardCharges;
   $('shardChip').hidden = !LV.shardCharges;
+  $('briefEyebrow').textContent = 'Level '+LV.code+' · Chapter '+LV.num+' · '+LV.chapter.name;
+  $('briefTitle').textContent = LV.name;
+  $('briefScene').textContent = LV.tagline;
+  $('briefList').innerHTML = LV.brief.map(b => '<li>'+b+'</li>').join('');
+  $('briefCard').style.borderTopColor = ACCENT[LV.scene];
   buildJournal();
-  buildLevelCards();
+  renderBar();
 }
+
+/* ===== Briefing card ===== */
+const SEAT_TIPS = {
+  past:'You are <b style="color:var(--past)">Past</b>. You see the whole map and the room names, a few turns late. Tell the others what already happened.',
+  present:'You are <b style="color:var(--present)">Present</b>. You move the hero and see one step around. Describe what is under your feet.',
+  future:'You are <b style="color:var(--future)">Future</b>. You see what is coming and keep the journal. Warn the others before it happens.'
+};
+function showBrief(){
+  const seat = online ? online.seat : (filter!=='all' ? filter : null);
+  const tip = $('briefSeat');
+  tip.hidden = !seat;
+  if (seat){ tip.innerHTML = SEAT_TIPS[seat]; tip.style.borderLeftColor = 'var(--'+seat+')'; }
+  $('briefOverlay').hidden = false;
+  setTimeout(() => $('briefOk').focus({preventScroll:true}), 50);
+}
+function hideBrief(){ $('briefOverlay').hidden = true; render(); }
+$('briefOk').addEventListener('click', hideBrief);
+$('briefBtn').addEventListener('click', showBrief);
+$('briefOverlay').addEventListener('click', e => { if (e.target.id==='briefOverlay') hideBrief(); });
+function afterOverlayClose(){ /* hook for when the cinematic frame fades out */ }
+
+/* ===== End-of-level card ===== */
+function renderEnd(cur){
+  const ended = cur.status!=='playing';
+  const show = ended && !endDismissed && gameVisible() && $('briefOverlay').hidden;
+  $('endOverlay').hidden = !show;
+  if (!ended) return;
+  const won = cur.status==='won';
+  $('endCard').className = 'card '+cur.status;
+  $('endEyebrow').textContent = 'Level '+LV.code+' · '+LV.name;
+  $('endTitle').textContent = won ? 'Cleared on turn '+cur.t : 'The run is over';
+  $('endText').textContent = won ? 'With '+cur.hearts+' heart'+(cur.hearts===1?'':'s')+' left. Swap seats and try to beat it.' : cur.msg;
+  const nxt = LEVELS[levelIdx+1];
+  const host = isHost();
+  $('endNext').hidden = !won || !nxt || !host;
+  if (nxt) $('endNext').textContent = nxt.ci===LV.ci ? 'Next level' : 'Next chapter';
+  $('endStages').hidden = !host;
+  $('endRestart').hidden = !canRestart();
+  const note = $('endNote');
+  note.hidden = host;
+  if (!host) note.textContent = 'The host picks what comes next.';
+}
+$('endRestart').addEventListener('click', restart);
+$('endNext').addEventListener('click', () => { if (isHost()) changeLevel(levelIdx+1); });
+$('endStages').addEventListener('click', () => openStages(online ? 'room' : 'local'));
+$('endOverlay').addEventListener('click', e => { if (e.target.id==='endOverlay'){ endDismissed = true; $('endOverlay').hidden = true; } });
 
 /* ===== Journal ===== */
 function shuffle(a){ for (let i=a.length-1;i>0;i--){ const j = Math.floor(Math.random()*(i+1)); [a[i],a[j]] = [a[j],a[i]]; } return a; }
@@ -1994,6 +2068,7 @@ function render(){
   const ended = cur.status!=='playing';
   const past = ended ? cur : states[Math.max(0, cur.t - pastDelay)];
   if (cur.status==='won') markCleared(LV.id);
+  const fh = fitH();
 
   // Past
   $('pastTurn').textContent = past.t;
@@ -2002,8 +2077,8 @@ function render(){
   $('delayDown').disabled = !canTune || pastDelay<=1;
   $('delayUp').disabled = !canTune || pastDelay>=6;
   document.querySelector('.seat-past .seat-rule').textContent = 'Sees the whole map, but '+pastDelay+' turn'+(pastDelay===1?'':'s')+' late.';
-  drawFullMap($('pastCanvas'), $('pastWrap'), past);
-  const entries = past.log.filter(e => e.t <= past.t).slice(-6).reverse();
+  drawFullMap($('pastCanvas'), $('pastWrap'), past, fh);
+  const entries = past.log.filter(e => e.t <= past.t).slice(fh ? -14 : -6).reverse();
   $('pastLog').innerHTML = entries.length
     ? entries.map(e => '<li class="'+e.kind+'"><span class="lt">T'+e.t+'</span><span>'+e.text+'</span></li>').join('')
     : '<li class="empty">Nothing yet.</li>';
@@ -2016,7 +2091,7 @@ function render(){
   const kc = $('keyChip'); kc.textContent = cur.key ? kl+' in hand' : 'No '+kl.toLowerCase(); kc.classList.toggle('has', cur.key);
   const sc = $('shardChip'); sc.textContent = 'Shards '+cur.shards; sc.classList.toggle('has', cur.shards>0);
   $('presentMsg').innerHTML = (cur.msg ? cur.msg+' ' : '') + '<span class="floor">'+underText(cur)+'</span>';
-  drawLocalView($('presentCanvas'), $('presentWrap'), cur, 380);
+  drawLocalView($('presentCanvas'), $('presentWrap'), cur, fh ? 0 : 380, fh);
   const allow = canMove();
   document.querySelectorAll('#dpad button').forEach(b => { b.disabled = !allow; });
   $('mirrorBtn').disabled = !allow || cur.shards<=0;
@@ -2028,22 +2103,8 @@ function render(){
   // Future
   renderFuture(cur);
 
-  // Banner
-  const bn = $('banner');
-  bn.hidden = !ended;
-  bn.className = 'banner '+(ended ? cur.status : '');
-  if (ended){
-    const won = cur.status==='won';
-    $('bannerTitle').textContent = won ? 'Level '+LV.code+' cleared on turn '+cur.t : 'The run is over';
-    $('bannerText').textContent = won
-      ? 'With '+cur.hearts+' heart'+(cur.hearts===1?'':'s')+' left. Swap seats and try to beat it.'
-      : cur.msg;
-    $('bannerRestart').hidden = !isSeat('present');
-    const nxt = LEVELS[levelIdx+1];
-    $('bannerNext').hidden = !won || !nxt || !isSeat('present');
-    if (nxt) $('bannerNext').textContent = nxt.ci===LV.ci ? 'Next level' : 'Next chapter';
-  }
-  $('restartBtn').disabled = !isSeat('present');
+  renderEnd(cur);
+  $('restartBtn').disabled = !canRestart();
 }
 
 function renderFuture(st){
@@ -2159,17 +2220,25 @@ function dive(i){
   render();
   if (online) pushRow({dives});
 }
-function setLevel(i, push){
+/* Set the level on this screen only. */
+function setLevel(i){
   levelIdx = Math.max(0, Math.min(LEVELS.length-1, i|0));
   LV = LEVELS[levelIdx];
   moves = ''; dives = ''; touch();
+  endDismissed = false;
   buildLevelUI();
   render();
-  if (online && push){ online.run++; pushRow({level:levelIdx, moves:'', dives:'', run:online.run}); }
+}
+/* Change the level for everyone (host online, anyone locally). */
+function changeLevel(i){
+  if (!isHost()) return;
+  setLevel(i);
+  if (online){ online.run++; pushRow({level:levelIdx, moves:'', dives:'', run:online.run}); }
+  if (gameVisible()) showBrief();
 }
 function restart(){
-  if (!isSeat('present')) return;
-  moves = ''; dives = ''; touch(); buildJournal(); render();
+  if (!canRestart()) return;
+  moves = ''; dives = ''; touch(); endDismissed = false; buildJournal(); render();
   if (online){ online.run++; pushRow({moves:'', dives:'', run:online.run}); }
 }
 function setDelay(d){
@@ -2181,28 +2250,34 @@ function setDelay(d){
 $('delayDown').addEventListener('click', () => setDelay(pastDelay-1));
 $('delayUp').addEventListener('click', () => setDelay(pastDelay+1));
 
-/* ===== Seat filter ===== */
+/* ===== Seat filter + top bar ===== */
 function applyFilter(){
   const seats = $('seats');
   document.querySelectorAll('.seat').forEach(s => { s.hidden = !(filter==='all' || s.dataset.seat===filter); });
   seats.classList.toggle('single', filter!=='all');
   document.querySelectorAll('#seatFilter button').forEach(b => b.setAttribute('aria-pressed', String(b.dataset.seat===filter)));
-  $('seatFilter').hidden = !!online;
-  renderModeBar();
-  buildLevelCards();
+  renderBar();
   render();
 }
-function renderModeBar(){
-  const mb = $('modeBar');
-  if (online){
-    mb.style.borderLeftColor = online.seat ? 'var(--'+online.seat+')' : 'var(--line)';
-    const who = ['past','present','future'].map(s => { const p = holderOf(s); return '<span><b style="color:var(--'+s+')">'+cap(s)+'</b> '+(p ? esc(p.name)+(p.client===online.me?' (you)':'')+(p.alive?'':' · away') : '<i>empty</i>')+'</span>'; }).join('');
-    mb.innerHTML = '<span><b>Room '+online.code+'</b></span>'+who;
-  } else {
-    mb.style.borderLeftColor = 'var(--present)';
-    mb.innerHTML = filter==='all'
-      ? '<span><b>Local test.</b> All three seats are on one screen so you can see how the pieces fit.</span><span>Pick a single seat above to feel what one player sees.</span>'
-      : '<span><b>Local test.</b> Showing only the '+cap(filter)+' seat.</span><span>Arrow keys still move the hero.</span>';
+function renderBar(){
+  $('barSw').textContent = LV.num;
+  $('barSw').style.background = ACCENT[LV.scene];
+  $('barLevel').textContent = LV.code+' · '+LV.name;
+  $('barChapter').textContent = LV.chapter.name;
+  const on = !!online;
+  $('seatFilter').hidden = on;
+  $('switchSeatBtn').hidden = !on;
+  $('copyInvite').hidden = !on;
+  $('stagesBtn').hidden = !isHost();
+  $('restartBtn').hidden = !canRestart();
+  const room = $('barRoom');
+  room.hidden = !on;
+  if (on){
+    room.innerHTML = '<span class="chip">Room '+online.code+'</span>' + ['past','present','future'].map(s => {
+      const p = holderOf(s);
+      const me = p && p.client===online.me;
+      return '<span class="chip '+(p?'on-'+s:'off')+(me?' me':'')+'" title="'+cap(s)+'">'+cap(s)+': '+(p ? esc(p.name)+(p.alive?'':' (away)') : '—')+'</span>';
+    }).join('') + (online.err ? '<span class="chip" style="border-color:var(--danger);color:var(--danger)">'+esc(online.err)+'</span>' : '');
   }
 }
 $('seatFilter').addEventListener('click', e => {
@@ -2215,7 +2290,8 @@ $('dpad').addEventListener('click', e => { const b = e.target.closest('button[da
 $('mirrorBtn').addEventListener('click', () => act('V'));
 const KEYS = {ArrowUp:'U',ArrowDown:'D',ArrowLeft:'L',ArrowRight:'R',w:'U',s:'D',a:'L',d:'R',W:'U',S:'D',A:'L',D:'R',' ':'W',m:'V',M:'V'};
 document.addEventListener('keydown', e => {
-  if (cineOpen()) return;
+  if (e.key==='Escape' && !$('briefOverlay').hidden){ hideBrief(); return; }
+  if (!gameVisible() || !$('briefOverlay').hidden) return;
   if (e.target.closest && e.target.closest('input,textarea,select')) return;
   if (e.target.closest && e.target.closest('button') && (e.key===' ' || e.key==='Enter')) return;
   if (e.metaKey || e.ctrlKey || e.altKey) return;
@@ -2223,25 +2299,34 @@ document.addEventListener('keydown', e => {
   if (!canMove()) return;
   e.preventDefault(); act(a);
 });
-let restartArmed = null;
+/* Two-click confirm for buttons that throw away a run. */
+function armed(btn, label, run){
+  if (btn.dataset.armed){ clearTimeout(+btn.dataset.armed); delete btn.dataset.armed; btn.textContent = label; btn.classList.remove('warn'); run(); return; }
+  btn.textContent = 'Click again'; btn.classList.add('warn');
+  btn.dataset.armed = String(setTimeout(() => { delete btn.dataset.armed; btn.textContent = label; btn.classList.remove('warn'); }, 2500));
+}
+function runInProgress(){ return moves.length>0 && current().status==='playing'; }
 $('restartBtn').addEventListener('click', () => {
-  const b = $('restartBtn');
-  if (current().status!=='playing' || moves.length===0){ restart(); return; }
-  if (restartArmed){ clearTimeout(restartArmed); restartArmed=null; b.textContent='Restart'; b.classList.remove('warn'); restart(); return; }
-  b.textContent = 'Click again'; b.classList.add('warn');
-  restartArmed = setTimeout(() => { restartArmed=null; b.textContent='Restart'; b.classList.remove('warn'); }, 2500);
+  if (!runInProgress()){ restart(); return; }
+  armed($('restartBtn'), 'Restart', restart);
 });
-$('bannerRestart').addEventListener('click', restart);
-$('bannerNext').addEventListener('click', () => { if (isSeat('present')) setLevel(levelIdx+1, true); });
+$('stagesBtn').addEventListener('click', () => openStages(online ? 'room' : 'local'));
+$('menuBtn').addEventListener('click', () => {
+  const go = () => { if (online) leaveRoom(); else showMenu(); };
+  if (online || runInProgress()) armed($('menuBtn'), 'Menu', go); else go();
+});
+$('switchSeatBtn').addEventListener('click', () => { if (online){ online.switching = true; online.status = ''; syncStage(); } });
+$('copyInvite').addEventListener('click', () => { if (online) copyText(inviteUrl(online.code), $('copyInvite')); });
 
 /* ===== Small helpers ===== */
 function esc(s){ return String(s).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c])); }
 let localSeq = 0;
 function touch(){ localSeq++; }
-function copyText(input, btn){
+function copyText(src, btn){
+  const text = typeof src==='string' ? src : src.value;
   const done = () => { const old = btn.textContent; btn.textContent = 'Copied'; setTimeout(() => { btn.textContent = old; }, 1500); };
-  try { navigator.clipboard.writeText(input.value).then(done, () => { input.focus(); input.select(); }); }
-  catch(e){ input.focus(); input.select(); }
+  const fallback = () => { if (typeof src!=='string'){ src.focus(); src.select(); } else { btn.textContent = 'Copy failed'; } };
+  try { navigator.clipboard.writeText(text).then(done, fallback); } catch(e){ fallback(); }
 }
 function savedName(){ try { return localStorage.getItem('tl-name') || ''; } catch(e){ return ''; } }
 function saveName(n){ try { localStorage.setItem('tl-name', n); } catch(e){} }
@@ -2289,7 +2374,7 @@ function closeCine(){
   const el = $('cine');
   if (el.hidden) return;
   el.classList.add('leaving');
-  setTimeout(() => { if (!cineStage){ el.hidden = true; el.classList.remove('leaving'); render(); } }, 600);
+  setTimeout(() => { if (!cineStage){ el.hidden = true; el.classList.remove('leaving'); render(); afterOverlayClose(); } }, 600);
 }
 function seatCardsHTML(){
   return ['past','present','future'].map(s =>
@@ -2304,25 +2389,145 @@ function inviteHTML(){
   return '<div class="cine-invite"><input id="cineInviteLink" readonly value="'+esc(inviteUrl(online.code))+'" aria-label="Invite link"><button type="button" class="btn" id="cineCopy">Copy invite</button></div>';
 }
 
+/* ===== Main menu ===== */
+const configured = !!(SUPABASE_URL && SUPABASE_ANON_KEY);
+let menuHow = false;
+function showMenu(){
+  $('stages').hidden = true;
+  $('briefOverlay').hidden = true;
+  const off = configured ? '' : ' disabled';
+  showCine('menu', 'Three players · three moments', typed('TimeLinked', false, 0.2), 'TimeLinked',
+    '<p class="menu-tag">One adventurer, three players stuck in different moments. Past knows where. Future knows when. Present is the only one who can act.</p>' +
+    '<div class="menu-box">' +
+      '<label for="menuNick">Your nickname</label>' +
+      '<input class="nick" id="menuNick" maxlength="16" autocomplete="nickname" spellcheck="false" placeholder="Nickname" value="'+esc(savedName())+'"'+off+'>' +
+      '<div class="menu-row"><button type="button" class="cine-btn" id="menuCreate"'+off+'>Create room</button></div>' +
+      '<span class="menu-or">or join one</span>' +
+      '<div class="menu-row"><input class="code" id="menuCode" maxlength="4" placeholder="CODE" autocomplete="off" aria-label="Room code"'+off+'><button type="button" class="cine-btn ghost" id="menuJoin"'+off+'>Join</button></div>' +
+      '<p class="cine-err" id="menuErr" role="alert">'+(configured ? '' : 'Online play is off in this copy. Play on one screen, or open your GitHub Pages version.')+'</p>' +
+    '</div>',
+    '<button type="button" class="cine-btn ghost" id="menuLocal">Play on one screen</button>' +
+    '<button type="button" class="linkish" id="menuHowBtn" aria-expanded="'+menuHow+'">'+(menuHow ? 'Hide how to play' : 'How to play')+'</button>' +
+    '<div class="howto-box" id="menuHow"'+(menuHow ? '' : ' hidden')+'>' +
+      '<div><h3>Past</h3><p>Sees the whole map with room names, but a few turns late. Knows where things are, not when.</p></div>' +
+      '<div><h3>Present</h3><p>The only one who can move. Sees one step around, right now.</p></div>' +
+      '<div><h3>Future</h3><p>Knows when doors open and hazards fire. Keeps a journal of photos to dive into. Never sees the map.</p></div>' +
+      '<div><h3>House rule</h3><p>Speak only in your own tense. Slip up and Present waits a turn.</p></div>' +
+    '</div>');
+}
+function menuName(){
+  const n = cleanName($('menuNick').value);
+  if (!n){ $('menuErr').textContent = 'Type a nickname so the others know who you are.'; $('menuNick').focus(); return null; }
+  saveName(n); return n;
+}
+
+/* ===== Stage select ===== */
+let stageMode = 'local', stageSel = 0, pendingName = '';
+const STAGE_MODES = {
+  create:{sub:'You are the host. Everyone in your room will play the stage you pick. You can change it later.', go:'Create room'},
+  room:{sub:'You are the host. Everyone in the room switches to the stage you pick.', go:'Play this stage'},
+  'local-new':{sub:'Playing on one screen. Pick where to start.', go:'Continue'},
+  local:{sub:'Playing on one screen.', go:'Play this stage'}
+};
+function buildStages(){
+  const cleared = new Set(loadCleared());
+  $('chapters').innerHTML = CHAPTERS.map((c,ci) =>
+    '<section class="chapter">' +
+      '<div class="chapter-head"><span class="sw" style="background:'+ACCENT[c.scene]+'">'+c.num+'</span><h3>'+c.name+'</h3><p>'+c.tags.join(' · ')+'</p></div>' +
+      '<div class="tiles">' + LEVELS.map((L,i) => [L,i]).filter(([L]) => L.ci===ci).map(([L,i]) =>
+        '<button type="button" class="tile" data-level="'+i+'" aria-pressed="'+(i===stageSel)+'">' +
+          '<canvas data-thumb="'+i+'" aria-hidden="true"></canvas>' +
+          '<span class="tcode">'+L.code+(cleared.has(L.id) ? ' <span class="ok">✓ cleared</span>' : '')+'</span>' +
+          '<span class="tname">'+L.name+'</span>' +
+          '<span class="tmeta">'+L.doom+' turns'+(L.photos.length ? ' · '+L.photos.length+' photos' : '')+(L.guards.length ? ' · '+L.guards.length+' guard'+(L.guards.length>1?'s':'') : '')+'</span>' +
+        '</button>').join('') +
+      '</div></section>').join('');
+  document.querySelectorAll('canvas[data-thumb]').forEach(cv => drawThumb(cv, LEVELS[+cv.dataset.thumb], 6));
+}
+function renderStageFoot(){
+  const L = LEVELS[stageSel];
+  document.querySelectorAll('.tile').forEach(t => t.setAttribute('aria-pressed', String(+t.dataset.level===stageSel)));
+  $('selName').textContent = L.code+' · '+L.name+' — '+L.chapter.name;
+  const warn = (stageMode==='room' || stageMode==='local') && runInProgress() && stageSel!==levelIdx;
+  $('selText').innerHTML = esc(stripTags(L.brief[0])) + (warn ? ' <span class="warnline">Switching ends the current run'+(online ? ' for everyone' : '')+'.</span>' : '');
+  $('stagesGo').textContent = STAGE_MODES[stageMode].go;
+}
+function openStages(mode){
+  stageMode = mode;
+  stageSel = levelIdx;
+  $('stagesSub').textContent = STAGE_MODES[mode].sub;
+  buildStages();
+  renderStageFoot();
+  $('stages').hidden = false;
+  $('stages').scrollTop = 0;
+  const t = document.querySelector('.tile[aria-pressed="true"]');
+  if (t) t.focus({preventScroll:true});
+}
+function closeStages(){ $('stages').hidden = true; render(); }
+$('chapters').addEventListener('click', e => {
+  const t = e.target.closest('.tile'); if (!t) return;
+  stageSel = +t.dataset.level; renderStageFoot();
+});
+$('chapters').addEventListener('dblclick', e => { if (e.target.closest('.tile')) $('stagesGo').click(); });
+$('stagesBack').addEventListener('click', () => {
+  if (stageMode==='create' || stageMode==='local-new'){ $('stages').hidden = true; showMenu(); }
+  else closeStages();
+});
+$('stagesGo').addEventListener('click', async () => {
+  const sel = stageSel;
+  if (stageMode==='create'){
+    $('stagesGo').disabled = true;
+    try { await createRoom(sel, pendingName); }
+    finally { $('stagesGo').disabled = false; }
+  } else if (stageMode==='room'){
+    closeStages();
+    if (sel!==levelIdx || runInProgress()) changeLevel(sel);
+  } else if (stageMode==='local-new'){
+    setLevel(sel); $('stages').hidden = true; openLocalCine();
+  } else {
+    closeStages();
+    if (sel!==levelIdx || runInProgress()){ setLevel(sel); showBrief(); }
+  }
+});
+
 /* Local test: pick a seat for this screen, or show all three. */
 function openLocalCine(){
-  showCine('local', 'Local test · one screen', typed('Who are you', true), 'Who are you...', seatCardsHTML(),
-    '<button type="button" class="linkish" id="cineAll">Testing alone? Show all three seats</button>');
+  showCine('local', 'One screen · '+LV.code+' '+LV.name, typed('Who are you', true), 'Who are you...', seatCardsHTML(),
+    '<button type="button" class="linkish" id="cineAll">Testing alone? Show all three seats</button>' +
+    '<button type="button" class="linkish" id="cineMenu">Back to menu</button>');
 }
 
 $('cine').addEventListener('click', e => {
   const card = e.target.closest('.cine-card');
   if (card && !card.disabled){
-    if (cineStage==='local'){ filter = card.dataset.seat; closeCine(); applyFilter(); }
+    if (cineStage==='local'){ filter = card.dataset.seat; closeCine(); applyFilter(); showBrief(); }
     else if (cineStage==='seats') claimSeat(card.dataset.seat);
     return;
   }
-  if (e.target.closest('#cineAll')){ filter = 'all'; closeCine(); applyFilter(); return; }
-  if (e.target.closest('#cineCopy')){ copyText($('cineInviteLink'), $('cineCopy')); return; }
-  if (e.target.closest('#cineStart')){ startRoom(); return; }
-  if (e.target.closest('#cineLeave')){ leaveRoom(); return; }
-  if (e.target.closest('#cineKeep')){ online.switching = false; online.status = ''; syncStage(); return; }
-  if (e.target.closest('#cineLocal')){ try { history.replaceState(null,'',location.href.split('#')[0]); } catch(err){} pendingCode = null; openLocalCine(); }
+  const id = (e.target.closest('button') || {}).id;
+  if (!id) return;
+  if (id==='cineAll'){ filter = 'all'; closeCine(); applyFilter(); showBrief(); }
+  else if (id==='cineMenu') showMenu();
+  else if (id==='cineCopy') copyText($('cineInviteLink'), $('cineCopy'));
+  else if (id==='cineStart') startRoom();
+  else if (id==='cineStage') openStages('room');
+  else if (id==='cineLeave') leaveRoom();
+  else if (id==='cineKeep'){ online.switching = false; online.status = ''; syncStage(); }
+  else if (id==='cineLocal'){ try { history.replaceState(null,'',location.href.split('#')[0]); } catch(err){} pendingCode = null; showMenu(); }
+  else if (id==='menuLocal'){ openStages('local-new'); }
+  else if (id==='menuCreate'){ const n = menuName(); if (n){ pendingName = n; openStages('create'); } }
+  else if (id==='menuJoin'){ const n = menuName(); if (n) joinCode($('menuCode').value.trim().toUpperCase(), n); }
+  else if (id==='menuHowBtn'){
+    menuHow = !menuHow;
+    $('menuHow').hidden = !menuHow;
+    $('menuHowBtn').textContent = menuHow ? 'Hide how to play' : 'How to play';
+    $('menuHowBtn').setAttribute('aria-expanded', String(menuHow));
+  }
+});
+$('cine').addEventListener('keydown', e => {
+  if (e.key!=='Enter') return;
+  if (e.target.id==='menuCode'){ e.preventDefault(); $('menuJoin').click(); }
+  else if (e.target.id==='menuNick'){ e.preventDefault(); $('menuCreate').click(); }
 });
 $('cine').addEventListener('submit', e => {
   if (e.target.id!=='nameForm') return;
@@ -2338,7 +2543,6 @@ $('cine').addEventListener('submit', e => {
    The database decides who holds which seat. Every client polls the room every
    1.5 seconds (which also acts as its heartbeat) and refreshes instantly when
    Supabase Realtime reports a change. */
-const configured = !!(SUPABASE_URL && SUPABASE_ANON_KEY);
 const ROOMS = 'timelinked_rooms';
 let sb = null, pendingCode = null;
 const clientId = (() => {
@@ -2346,15 +2550,12 @@ const clientId = (() => {
   try { let id = sessionStorage.getItem('tl-client'); if (!id){ id = make(); sessionStorage.setItem('tl-client', id); } return id; }
   catch(e){ return make(); }
 })();
-$('onlineNote').innerHTML = configured
-  ? 'Pick a nickname, then create a room and send the invite link. Everyone waits in the lobby until the host starts, then picks who they are.'
-  : 'Online play needs your Supabase project. Put your project URL and publishable key into <code>SUPABASE_URL</code> and <code>SUPABASE_ANON_KEY</code> at the top of the script in <code>index.html</code>, run <code>supabase.sql</code> once, and host the page on GitHub Pages. This preview only runs the local test.';
-['createBtn','joinBtn','codeInput','nickInput'].forEach(id => { $(id).disabled = !configured; });
-$('nickInput').value = savedName();
-$('onlineBtn').addEventListener('click', () => {
-  const p = $('onlinePanel'); p.hidden = !p.hidden; $('onlineBtn').setAttribute('aria-expanded', String(!p.hidden));
-});
-function setErr(m){ $('onlineErr').textContent = m || ''; const l = $('liveErr'); if (l) l.textContent = m || ''; }
+function setErr(m){
+  m = m || '';
+  if (cineStage==='menu' && $('menuErr')) $('menuErr').textContent = m;
+  else if (cineStage==='name' && $('nameErr')) $('nameErr').textContent = m;
+  if (online){ if (online.err !== m){ online.err = m; renderBar(); } }
+}
 function inviteUrl(code){ return location.href.split('#')[0] + '#room-' + code; }
 function loadLib(){
   if (window.supabase && window.supabase.createClient) return Promise.resolve();
@@ -2369,34 +2570,27 @@ async function client(){ if (!sb){ await loadLib(); sb = window.supabase.createC
 function newCode(){ const A='ABCDEFGHJKLMNPQRSTUVWXYZ'; let c=''; for (let i=0;i<4;i++) c += A[Math.floor(Math.random()*A.length)]; return c; }
 function rpc(fn, args){ return sb.rpc(fn, args).then(({data, error}) => { if (error) throw new Error(error.message); return data; }); }
 
-function panelName(){
-  const n = cleanName($('nickInput').value);
-  if (!n){ setErr('Type a nickname first.'); $('nickInput').focus(); return null; }
-  saveName(n); return n;
-}
-$('createBtn').addEventListener('click', async () => {
-  setErr('');
-  const name = panelName(); if (!name) return;
+async function createRoom(level, name){
   try {
     const c = await client();
     let code = newCode(), tries = 0, error = null;
     do {
-      ({error} = await c.from(ROOMS).insert({code, host:clientId, phase:'lobby', level:levelIdx, delay:pastDelay}));
+      ({error} = await c.from(ROOMS).insert({code, host:clientId, phase:'lobby', level, delay:pastDelay}));
       if (error && error.code==='23505'){ code = newCode(); tries++; } else break;
     } while (tries<5);
     if (error) throw new Error('Could not create a room: '+error.message);
+    setLevel(level);
+    $('stages').hidden = true;
     await joinCode(code, name);
-  } catch(err){ setErr(err.message); }
-});
-$('joinBtn').addEventListener('click', () => {
-  const name = panelName(); if (!name) return;
-  joinCode($('codeInput').value.trim().toUpperCase(), name);
-});
-$('codeInput').addEventListener('keydown', e => { if (e.key==='Enter') $('joinBtn').click(); });
+  } catch(err){
+    $('selText').innerHTML = '<span class="warnline">'+esc(err.message)+'</span>';
+  }
+}
 
 /* Opened from an invite link: ask for a nickname first. */
 function showNameScreen(code, err){
   pendingCode = code;
+  $('stages').hidden = true;
   showCine('name', 'Room '+code, typed('TimeLinked', false, 0.2), 'TimeLinked',
     '<form class="cine-form" id="nameForm" novalidate>' +
       '<label for="nameInput">What should the others call you?</label>' +
@@ -2404,7 +2598,7 @@ function showNameScreen(code, err){
       '<button type="submit" class="cine-btn">Join room</button>' +
       '<p class="cine-err" id="nameErr" role="alert">'+esc(err || '')+'</p>' +
     '</form>',
-    '<button type="button" class="linkish" id="cineLocal">Play on this screen instead</button>');
+    '<button type="button" class="linkish" id="cineLocal">Go to the main menu instead</button>');
   setTimeout(() => { const i = $('nameInput'); if (i && cineStage==='name') i.focus({preventScroll:true}); }, 400);
 }
 
@@ -2419,22 +2613,18 @@ async function joinCode(code, name){
     await rpc('timelinked_join', {p_room:code, p_client:clientId, p_name:name});
     enterRoom(code, name);
   } catch(err){
-    if (cineStage==='name'){ $('nameErr').textContent = err.message; }
-    else { setErr(err.message); $('onlinePanel').hidden = false; }
+    if (cineStage==='name' || cineStage==='menu') setErr(err.message);
+    else showMenu(), setTimeout(() => setErr(err.message), 0);
   }
 }
 
 function enterRoom(code, name){
   if (online) teardown();
   online = {code, me:clientId, name, seat:null, room:null, players:[], run:-1,
-    entered:false, switching:false, status:'', chan:null, timer:0, inflight:false, again:false,
+    entered:false, switching:false, status:'', err:'', chan:null, timer:0, inflight:false, again:false,
     writing:0, pend:null, gone:false};
   try { history.replaceState(null, '', '#room-'+code); } catch(e){}
-  $('onlinePanel').hidden = false;
-  $('onlineSetup').style.display = 'none'; $('onlineLive').hidden = false;
-  $('roomCode').textContent = code;
-  $('inviteLink').value = inviteUrl(code);
-  $('seatFilter').hidden = true;
+  filter = 'all';
   try {
     const chan = sb.channel('timelinked-'+code);
     chan.on('postgres_changes', {event:'*', schema:'public', table:ROOMS, filter:'code=eq.'+code}, () => refreshSoon());
@@ -2444,6 +2634,7 @@ function enterRoom(code, name){
   } catch(e){ /* polling still works */ }
   showCine('lobby', 'Room '+code, typed('Waiting room', false, 0.2), 'Waiting room',
     '<ul class="cine-players" id="cinePlayers"><li class="muted">Connecting…</li></ul>', '');
+  renderBar();
   refresh();
 }
 function teardown(){
@@ -2509,9 +2700,11 @@ function applyState(st, fresh){
     moves = r.moves || ''; dives = r.dives || '';
     if (lvlChanged){ levelIdx = r.level|0; LV = LEVELS[levelIdx]; buildLevelUI(); }
     else if (runChanged) buildJournal();
+    if (lvlChanged || runChanged) endDismissed = false;
     if (changed && o.entered) render();
+    if (lvlChanged && o.entered && gameVisible()) showBrief();
   }
-  renderRoster();
+  renderBar();
   syncStage();
 }
 function syncStage(){
@@ -2528,14 +2721,10 @@ function syncStage(){
   if (stage==='lobby') drawLobby();
   else if (stage==='seats') drawSeats();
   else if (cineStage){
-    filter = o.seat; closeCine(); applyFilter();
-    $('mySeatLabel').textContent = cap(o.seat);
-    $('mySeatLabel').style.color = 'var(--'+o.seat+')';
+    filter = o.seat; closeCine(); applyFilter(); showBrief();
   } else {
     if (filter!==o.seat){ filter = o.seat; applyFilter(); }
-    else renderModeBar();
-    $('mySeatLabel').textContent = cap(o.seat);
-    $('mySeatLabel').style.color = 'var(--'+o.seat+')';
+    else renderBar();
   }
 }
 function drawLobby(){
@@ -2551,9 +2740,10 @@ function drawLobby(){
     (p.client===o.me ? '<span class="ptag you">You</span>' : '') + '</li>').join('') || '<li class="muted">Nobody here yet.</li>';
   const n = o.players.filter(p => p.alive).length;
   const isHost = host===o.me;
-  const foot = inviteHTML() +
+  const stageLine = '<p class="cine-stage-line">Stage <b>'+esc(LV.code+' · '+LV.name)+'</b> · '+esc(LV.chapter.name)+'</p>';
+  const foot = stageLine + inviteHTML() +
     (isHost
-      ? '<button type="button" class="cine-btn" id="cineStart">Start game · '+n+' player'+(n===1?'':'s')+'</button>' +
+      ? '<div class="menu-row" style="width:auto"><button type="button" class="cine-btn ghost" id="cineStage">Change stage</button><button type="button" class="cine-btn" id="cineStart">Start game · '+n+' player'+(n===1?'':'s')+'</button></div>' +
         '<p class="cine-hint">'+(n<3 ? 'TimeLinked plays best with three. You can start with fewer to try it out.' : 'Everyone is here.')+'</p>'
       : '<p class="cine-hint">Waiting for '+esc((o.players.find(p => p.client===host)||{}).name || 'the host')+' to start…</p>') +
     '<button type="button" class="linkish" id="cineLeave">Leave room</button>';
@@ -2624,25 +2814,15 @@ async function claimSeat(seat){
   syncStage();
   refreshSoon();
 }
-$('switchSeatBtn').addEventListener('click', () => { if (online){ online.switching = true; online.status = ''; syncStage(); } });
-$('copyInvite').addEventListener('click', () => copyText($('inviteLink'), $('copyInvite')));
-$('leaveBtn').addEventListener('click', () => leaveRoom());
 async function leaveRoom(){
   const o = online; if (!o) return;
   teardown(); online = null;
   try { await rpc('timelinked_leave', {p_room:o.code, p_client:o.me}); } catch(e){}
   try { history.replaceState(null, '', location.href.split('#')[0]); } catch(e){}
-  $('onlineSetup').style.display = 'flex'; $('onlineLive').hidden = true;
   filter = 'all';
   setLevel(levelIdx, false);
   applyFilter();
-  openLocalCine();
-}
-function renderRoster(){
-  $('presence').innerHTML = ['past','present','future'].map(s => {
-    const p = holderOf(s);
-    return '<span class="chip '+(p?'on-'+s:'off')+'">'+cap(s)+': '+(p ? esc(p.name) : '—')+'</span>';
-  }).join('');
+  showMenu();
 }
 function pushRow(fields){
   const o = online; if (!o) return;
@@ -2678,10 +2858,10 @@ function start(data){
   applyFilter();
   const m = /^#room-([A-Za-z]{4})$/.exec(location.hash || '');
   if (m && configured){ showNameScreen(m[1].toUpperCase()); return; }
-  if (m && !configured){ $('onlinePanel').hidden = false; setErr('This copy is not set up for online play yet, so the invite link cannot open a room.'); }
-  if (!restoring) openLocalCine();
+  if (!restoring) showMenu();
+  if (m && !configured) setErr('This copy is not set up for online play, so the invite link cannot open a room.');
 }
-if (hot && hot.snapshot) hot.snapshot(() => online ? {} : {level:levelIdx, moves, dives, filter, delay:pastDelay});
+if (hot && hot.snapshot) hot.snapshot(() => (online || !gameVisible()) ? {} : {level:levelIdx, moves, dives, filter, delay:pastDelay});
 let resizeRaf = 0;
 const ro = new ResizeObserver(() => { cancelAnimationFrame(resizeRaf); resizeRaf = requestAnimationFrame(() => { if (states.length) render(); }); });
 ro.observe($('pastWrap')); ro.observe($('presentWrap')); ro.observe($('book'));
