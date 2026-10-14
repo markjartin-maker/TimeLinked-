@@ -439,7 +439,7 @@ button{font:inherit;color:inherit}
     <section class="seat seat-past" data-seat="past" aria-label="Past seat">
       <header class="seat-head">
         <span class="seat-name">Past</span>
-        <span class="seat-rule">Sees everywhere the hero has been, 2 turns late.</span>
+        <span class="seat-rule">Sees far around the hero, 2 turns late.</span>
         <span class="tense">Speak in <b>past tense</b>: "You walked into the red hall."</span>
       </header>
       <div class="seat-body">
@@ -454,7 +454,7 @@ button{font:inherit;color:inherit}
           <div class="minimap-box">
             <div class="mini-head"><p class="section-label">Explored so far</p><button type="button" class="btn" id="followBtn" hidden>Follow the hero</button></div>
             <canvas id="miniCanvas" aria-label="Minimap of explored areas. Click to look there."></canvas>
-            <p class="hint" style="text-align:left">Drag the map to look back at anywhere the hero has seen. Double-click to follow the hero again.</p>
+            <p class="hint" style="text-align:left">Drag the map to look back over anywhere already revealed. Double-click to follow the hero again.</p>
           </div>
           <p class="section-label">What happened</p>
           <ol class="log" id="pastLog"></ol>
@@ -2658,7 +2658,7 @@ function buildLevelUI(){
 
 /* ===== Briefing card ===== */
 const SEAT_TIPS = {
-  past:'You are <b style="color:var(--past)">Past</b>. You can drag around everywhere the hero has already seen, a few turns late. Tell the others what already happened and where things were.',
+  past:'You are <b style="color:var(--past)">Past</b>. You see four tiles around the hero, a few turns late, and can drag back over anywhere already revealed. Tell the others what already happened and where things are.',
   present:'You are <b style="color:var(--present)">Present</b>. You move the hero and see one step around. Describe what is under your feet.',
   future:'You are <b style="color:var(--future)">Future</b>. You see what is coming and keep the journal. Warn the others before it happens.'
 };
@@ -2794,6 +2794,8 @@ $('pgPrev').addEventListener('click', () => flip(-1));
 $('book').addEventListener('click', e => { const b = e.target.closest('[data-dive]'); if (b && !b.disabled) dive(+b.dataset.dive); });
 
 /* ===== Past's explorable map ===== */
+/* Past sees a circle this many tiles around every spot the hero has stood (Present sees 1). */
+const PAST_SIGHT = 4;
 const pastCam = {cx:0, cy:0, follow:true};
 let pastCache = null, pastViewInfo = null, miniScale = 2;
 let exploredMemo = {key:'', set:null};
@@ -2801,9 +2803,13 @@ function exploredUpTo(pi){
   const key = levelIdx+'|'+moves+'|'+dives+'|'+pi;
   if (exploredMemo.key===key) return exploredMemo.set;
   const set = new Set();
+  const R = PAST_SIGHT, R2 = (R+0.5)*(R+0.5);
+  let lx = null, ly = null;
   for (let i=0; i<=pi; i++){
     const s = states[i];
-    for (let dy=-1; dy<=1; dy++) for (let dx=-1; dx<=1; dx++) set.add(K(s.x+dx, s.y+dy));
+    if (s.x===lx && s.y===ly) continue;
+    lx = s.x; ly = s.y;
+    for (let dy=-R; dy<=R; dy++) for (let dx=-R; dx<=R; dx++) if (dx*dx+dy*dy <= R2) set.add(K(s.x+dx, s.y+dy));
   }
   exploredMemo = {key, set};
   return set;
@@ -2885,7 +2891,7 @@ function render(){
   const canTune = isSeat('past');
   $('delayDown').disabled = !canTune || pastDelay<=1;
   $('delayUp').disabled = !canTune || pastDelay>=6;
-  document.querySelector('.seat-past .seat-rule').textContent = 'Sees everywhere the hero has been, '+pastDelay+' turn'+(pastDelay===1?'':'s')+' late.';
+  document.querySelector('.seat-past .seat-rule').textContent = 'Sees far around the hero, '+pastDelay+' turn'+(pastDelay===1?'':'s')+' late.';
   const pi = states.indexOf(past);
   pastCache = {st:past, explored:exploredUpTo(pi), trail:trailUpTo(pi)};
   if (pastCam.follow){ pastCam.cx = past.x+0.5; pastCam.cy = past.y+0.5; }
@@ -3173,7 +3179,7 @@ function cleanName(n){ return String(n || '').replace(/\s+/g,' ').trim().slice(0
    One black frame with a blue border hosts every pre-game screen:
    'name' (nickname), 'lobby' (waiting room), 'seats' (Who are you...). */
 const SEATS = {
-  past:{role:'Sees everywhere the hero has been, a few turns late.', words:['was','did']},
+  past:{role:'Sees far around the hero, a few turns late.', words:['was','did']},
   present:{role:'Moves the hero. Sees one step around.', words:['is','am']},
   future:{role:'Knows what is coming. Never sees the map.', words:['will','shall']}
 };
@@ -3246,7 +3252,7 @@ function showMenu(){
     '<button type="button" class="cine-btn ghost" id="menuLocal">Play on one screen</button>' +
     '<button type="button" class="linkish" id="menuHowBtn" aria-expanded="'+menuHow+'">'+(menuHow ? 'Hide how to play' : 'How to play')+'</button>' +
     '<div class="howto-box" id="menuHow"'+(menuHow ? '' : ' hidden')+'>' +
-      '<div><h3>Past</h3><p>Can look back over everywhere the hero has seen, with room names, a few turns late. Unexplored places stay dark.</p></div>' +
+      '<div><h3>Past</h3><p>Sees four tiles in every direction around the hero, a few turns late, and remembers it all. Places the hero has not been near stay dark.</p></div>' +
       '<div><h3>Present</h3><p>The only one who can move. Sees one step around, right now.</p></div>' +
       '<div><h3>Future</h3><p>Knows when doors open and hazards fire. Keeps a journal of photos to dive into. Never sees the map.</p></div>' +
       '<div><h3>House rule</h3><p>Speak only in your own tense. Slip up and Present waits a turn.</p></div>' +
