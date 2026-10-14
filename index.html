@@ -105,14 +105,16 @@ button{font:inherit;color:inherit}
 .seat-head .tense{margin-left:auto}
 .seat-body{flex:1;min-height:0;overflow:auto;padding:12px;display:flex;flex-direction:column;gap:12px}
 .col{display:flex;flex-direction:column;gap:12px;min-width:0;min-height:0}
+.col > *{flex-shrink:0}
 .view{min-height:0;display:grid;place-items:center;overflow:hidden}
 .seats:not(.single) .seat-body > *{flex:none}
 
 /* One seat on screen: each seat gets a layout that uses the whole window */
 .seats.single .seat-body{display:grid;gap:16px;overflow:hidden;padding:14px}
-.seats.single .seat-past .seat-body{grid-template-columns:minmax(0,1fr) minmax(260px,320px);grid-template-rows:minmax(0,1fr)}
+.seats.single .seat-past .seat-body{grid-template-columns:minmax(0,1fr) minmax(260px,300px);grid-template-rows:minmax(0,1fr)}
 .seats.single .seat-present .seat-body{grid-template-columns:minmax(0,1fr) minmax(280px,340px);grid-template-rows:minmax(0,1fr)}
 .seats.single .seat-future .seat-body{grid-template-columns:minmax(300px,.85fr) minmax(0,1.15fr);grid-template-rows:minmax(0,1fr)}
+.seats.single .seat-future.no-journal .seat-body{grid-template-columns:minmax(0,820px);justify-content:center}
 .seats.single .col{overflow:auto;padding-right:2px}
 .seats.single .view{height:100%}
 .seats.single .present-side{justify-content:center}
@@ -166,10 +168,10 @@ button{font:inherit;color:inherit}
 .chapter-head h3{margin:0;font-family:var(--display);font-weight:400;font-size:16px;line-height:1.15}
 .chapter-head p{grid-column:1 / -1;margin:0;font-size:13px;color:var(--muted)}
 .tiles{display:flex;flex-direction:column;gap:8px}
-.tile{display:grid;grid-template-columns:auto minmax(0,1fr);gap:4px 12px;align-items:center;text-align:left;background:var(--bg);border:2px solid var(--line);padding:8px;cursor:pointer}
+.tile{display:grid;grid-template-columns:minmax(0,1fr);gap:4px;align-items:start;text-align:left;background:var(--bg);border:2px solid var(--line);padding:8px;cursor:pointer}
 .tile:hover{border-color:var(--muted)}
 .tile[aria-pressed="true"]{border-color:var(--present);background:var(--panel-2);box-shadow:0 0 0 2px rgba(242,193,78,.25)}
-.tile canvas{display:block;image-rendering:pixelated;grid-row:span 3;background:#0c0b10}
+.tile canvas{display:block;image-rendering:pixelated;background:#0c0b10;max-width:100%;margin-bottom:6px}
 .tile .tcode{font-family:var(--mono);font-size:11.5px;color:var(--muted)}
 .tile .tname{font-family:var(--display);font-size:13.5px;line-height:1.2}
 .tile .tmeta{font-size:12px;color:var(--muted)}
@@ -209,7 +211,13 @@ button{font:inherit;color:inherit}
 .canvas-wrap{width:100%;min-width:0;display:flex;justify-content:center}
 .view canvas{display:block;image-rendering:pixelated;max-width:100%}
 .canvas-wrap canvas{display:block;image-rendering:pixelated;max-width:100%}
-#pastCanvas{filter:sepia(.5) saturate(.72) brightness(.96)}
+#pastCanvas{filter:sepia(.5) saturate(.72) brightness(.96);cursor:grab;touch-action:none}
+#pastCanvas.dragging{cursor:grabbing}
+.minimap-box{display:flex;flex-direction:column;gap:6px}
+.mini-head{display:flex;align-items:center;justify-content:space-between;gap:8px;flex-wrap:wrap}
+.mini-head .btn{font-size:11px;padding:5px 9px;border-color:var(--past);color:var(--past)}
+#miniCanvas{display:block;image-rendering:pixelated;cursor:crosshair;border:2px solid var(--line);max-width:100%;align-self:flex-start}
+.prophecy li.dim{color:var(--muted);font-style:italic}
 .present-wrap{max-width:380px;width:100%;margin:0 auto}
 .readout{display:flex;flex-wrap:wrap;gap:6px 14px;align-items:center;font-family:var(--mono);font-size:13px;color:var(--muted)}
 .readout b{color:var(--text);font-variant-numeric:tabular-nums}
@@ -431,17 +439,22 @@ button{font:inherit;color:inherit}
     <section class="seat seat-past" data-seat="past" aria-label="Past seat">
       <header class="seat-head">
         <span class="seat-name">Past</span>
-        <span class="seat-rule">Sees the whole map, but 2 turns late.</span>
+        <span class="seat-rule">Sees everywhere the hero has been, 2 turns late.</span>
         <span class="tense">Speak in <b>past tense</b>: "You walked into the red hall."</span>
       </header>
       <div class="seat-body">
-        <div class="view" id="pastWrap"><canvas id="pastCanvas" aria-label="Map as it was a few turns ago"></canvas></div>
+        <div class="view past-view" id="pastWrap"><canvas id="pastCanvas" aria-label="Map as it was a few turns ago. Drag to look around."></canvas></div>
         <div class="col">
           <div class="readout" style="justify-content:space-between">
             <span>Echo of turn <b id="pastTurn">0</b></span>
             <span class="stepper" role="group" aria-label="How many turns behind Past sees">Turns behind
               <button type="button" id="delayDown" aria-label="Fewer turns behind">−</button><b id="delayVal">2</b><button type="button" id="delayUp" aria-label="More turns behind">+</button>
             </span>
+          </div>
+          <div class="minimap-box">
+            <div class="mini-head"><p class="section-label">Explored so far</p><button type="button" class="btn" id="followBtn" hidden>Follow the hero</button></div>
+            <canvas id="miniCanvas" aria-label="Minimap of explored areas. Click to look there."></canvas>
+            <p class="hint" style="text-align:left">Drag the map to look back at anywhere the hero has seen. Double-click to follow the hero again.</p>
           </div>
           <p class="section-label">What happened</p>
           <ol class="log" id="pastLog"></ol>
@@ -600,14 +613,14 @@ function loopPath(x1,y1,x2,y2){
 const MIRROR_PHOTO = {note:'Through this one, you will see what the hero sees.', effect:{type:'mirror', turns:6},
   now:'You feel someone looking over your shoulder.', past:'Future started watching through the hero\'s eyes.'};
 
-const CHAPTERS = [
+const SECTION_CHAPTERS = [
 /* ---------------------------------------------------------------- 1 */
 {
   id:'keep', num:1, name:'Hourglass Keep', scene:'keep',
   tagline:'A dark keep with timed doors, spike traps and a chasm.',
   tags:['Timed doors','Spikes','Crumbling bridges','Mimics'],
   chestStyle:'chest', exitColor:'#d8a836', needsKey:true,
-  doomName:'The keep', doomNow:'The keep collapses around you.', doomPast:'The keep collapsed.',
+  doomName:'The collapse', doomNow:'The keep collapses around you.', doomPast:'The keep collapsed.',
   shardCharges:0, mirrorTurns:5, focus:0, photos:[], guards:[], hazards:[], collapses:[],
   fillers:['Day one. The candles burn backwards here.','I keep hearing doors that are not there.','Do not trust a chest that breathes.','The sand in the big hourglass moves up.'],
   levels:[
@@ -1100,6 +1113,609 @@ const CHAPTERS = [
 }
 ];
 
+/* =====================================================================
+   BIG MAPS
+   Each chapter's three original stages become sections of one scrolling map.
+   compose() places sections on a rock grid, joins them with corridors and
+   puts a locked door at each section's old exit. A section's timers start
+   when the hero first reaches its start room, and that room becomes the
+   respawn point.
+   ===================================================================== */
+function compose(chapter, spec){
+  const W = spec.w, H = spec.h;
+  const grid = Array.from({length:H}, () => Array(W).fill('#'));
+  const L = {id:spec.id, name:spec.name, brief:spec.brief, doom:spec.doom,
+    rooms:[], doors:{}, hazards:[], collapses:[], chests:{}, photos:[], guards:[], zones:[],
+    prophecy:spec.prophecy, keyNow:spec.keyNow, keyPast:spec.keyPast};
+  const off = (x,y,p) => [x+p.x, y+p.y];
+  const offK = (k,p) => { const [x,y] = k.split(',').map(Number); return (x+p.x)+','+(y+p.y); };
+  spec.parts.forEach((p, pi) => {
+    const src = Object.assign({}, chapter, p.src);
+    const rm = p.remap || {};
+    const rn = c => rm[c] || c;
+    let sx = 0, sy = 0;
+    src.map.forEach((row, y) => [...row].forEach((c, x) => { if (c==='S'){ sx = x; sy = y; } }));
+    // tiles
+    src.map.forEach((row, y) => [...row].forEach((c, x) => {
+      let cc = rn(c);
+      if (cc==='S' && pi>0) cc = '.';
+      if (cc==='E' && !p.final) cc = '.';
+      grid[p.y+y][p.x+x] = cc;
+    }));
+    // rooms
+    src.rooms.forEach(r => L.rooms.push(Object.assign({}, r, {
+      id:p.zone+'-'+r.id, name:(p.roomNames && p.roomNames[r.id]) || r.name,
+      rect:[r.rect[0]+p.x, r.rect[1]+p.y, r.rect[2]+p.x, r.rect[3]+p.y],
+      label:r.label ? off(r.label[0], r.label[1], p) : null })));
+    const startRoom = src.rooms.find(r => sx>=r.rect[0] && sy>=r.rect[1] && sx<=r.rect[2] && sy<=r.rect[3]);
+    L.zones.push({name:p.zone, label:p.label, rect:[startRoom.rect[0]+p.x, startRoom.rect[1]+p.y, startRoom.rect[2]+p.x, startRoom.rect[3]+p.y], spawn:[sx+p.x, sy+p.y]});
+    // doors
+    Object.entries(src.doors || {}).forEach(([id, d]) => {
+      const nd = Object.assign({}, d);
+      if (d.kind==='timed') nd.zone = p.zone;
+      if (d.plates) nd.plates = d.plates.map(k => offK(k, p));
+      L.doors[rn(id)] = nd;
+    });
+    // hazards: bind each to this section's tiles
+    (src.hazards || []).forEach(h => {
+      const cells = [];
+      src.map.forEach((row, y) => [...row].forEach((c, x) => { if (c===h.char) cells.push((x+p.x)+','+(y+p.y)); }));
+      L.hazards.push(Object.assign({}, h, {cells, zone:p.zone}));
+    });
+    // collapses: relative to reaching this section
+    (src.collapses || []).forEach(g => {
+      let cells = g.cells ? g.cells.map(k => offK(k, p)) : [];
+      if (!g.cells) src.map.forEach((row, y) => [...row].forEach((c, x) => { if (c===g.char) cells.push((x+p.x)+','+(y+p.y)); }));
+      L.collapses.push(Object.assign({}, g, {cells, zone:p.zone, char:undefined}));
+    });
+    // chests
+    Object.entries(src.chests || {}).forEach(([k, info]) => {
+      const ni = Object.assign({}, info);
+      if (info.kind==='key' && !p.final) ni.opens = p.zone;
+      if (info.seal) ni.seal = rn(info.seal);
+      L.chests[offK(k, p)] = ni;
+    });
+    // photos
+    (src.photos || []).forEach(ph => {
+      const e = Object.assign({}, ph.effect);
+      if (e.at) e.at = off(e.at[0], e.at[1], p);
+      if (e.id) e.id = rn(e.id);
+      L.photos.push(Object.assign({}, ph, {cx:ph.cx+p.x, cy:ph.cy+p.y, effect:e, zone:p.zone}));
+    });
+    // guards
+    (src.guards || []).forEach(g => L.guards.push(Object.assign({}, g, {
+      path:g.path.map(([x,y]) => [x+p.x, y+p.y]),
+      zone:[g.zone[0]+p.x, g.zone[1]+p.y, g.zone[2]+p.x, g.zone[3]+p.y], section:p.zone })));
+    // locked door at the old exit
+    if (p.lock){
+      const [lx, ly] = p.lock.at;
+      grid[p.y+ly][p.x+lx] = p.lock.letter;
+      L.doors[p.lock.letter] = {kind:'lock', key:p.zone, name:p.lock.name, word:p.lock.word, color:p.lock.color, sub:p.label+' exit'};
+    }
+  });
+  (spec.carve || []).forEach(([x, y, c]) => { grid[y][x] = c; });
+  L.map = grid.map(r => r.join(''));
+  return L;
+}
+
+const SEC = SECTION_CHAPTERS.map(c => c.levels);
+const chapterBase = c => { const o = Object.assign({}, c); delete o.levels; return o; };
+const lockDoor = (letter, name, word, color, at) => ({letter, name, word, color, at});
+
+const CHAPTERS = [
+Object.assign(chapterBase(SECTION_CHAPTERS[0]), {levels:[compose(SECTION_CHAPTERS[0], {
+  id:'keep-big', name:'Through the Keep', w:53, h:17, doom:220,
+  brief:[
+    'Three sections, one long keep: the <b>Gatehouse</b>, <b>the Keep</b> and the <b>Sinking Stair</b>. Each hides the key to a locked door that leads on.',
+    'A section\'s doors and bridges run on their own clock, which starts the moment the hero walks in. Fall, and you wake at the start of the section you are in.',
+    'Past can drag the map to look back at anywhere the hero has already seen. Everything else is dark.'
+  ],
+  prophecy:[
+    {text:'Three locked doors stand between you and the summit. Each section hides the key to the next.'},
+    {zone:'gate', text:'<b>Gatehouse:</b> the key is in the Green Room. The Purple Room chest bites. The Gold Door opens on a timer.'},
+    {zone:'keep', text:'<b>The Keep:</b> the key rests in the Green Vault. The Purple Library and Stone Hall chests are mimics. The lower bridge falls 26 turns after you arrive, the upper one at 50.'},
+    {zone:'stair', text:'<b>Sinking Stair:</b> the final key is in the Spire, in the chest nearer the bridge. Bridges fall 36, 44 and 70 turns after you reach the Landing.'},
+    {text:'The keep falls on <b>turn 220</b>.'}
+  ],
+  parts:[
+    {src:SEC[0][0], x:0, y:8, zone:'gate', label:'the Gatehouse', lock:lockDoor('G','Gatehouse Door','iron','#b0a58f',[12,2])},
+    {src:SEC[0][1], x:14, y:0, zone:'keep', label:'the Keep', lock:lockDoor('H','Keep Door','bronze','#c08a4a',[18,2])},
+    {src:SEC[0][2], x:34, y:4, zone:'stair', label:'the Sinking Stair', remap:{M:'N'}, final:true}
+  ],
+  carve:[[13,10,'.'],[14,10,'.'], ...Array.from({length:13}, (_,i) => [33,2+i,'.']), [34,14,'.']]
+})]}),
+Object.assign(chapterBase(SECTION_CHAPTERS[1]), {levels:[compose(SECTION_CHAPTERS[1], {
+  id:'darkroom-big', name:'After Hours', w:51, h:15, doom:280,
+  brief:[
+    'The whole studio, front to back: the <b>Front Counter</b>, <b>the Darkroom</b> and the <b>Archive Stacks</b>. Each hides a key to the next locked door.',
+    'Future\'s journal holds every photo in the building, all mixed together. Find the right one for where the hero is standing.',
+    'Past can drag the map to look back at anywhere the hero has already seen.'
+  ],
+  prophecy:[
+    {text:'The studio has three rooms of secrets. Each hides the key to the next locked door.'},
+    {zone:'counter', text:'<b>Front Counter:</b> the key is in the Counter room. The Back Office sits past a hole in the floor.'},
+    {zone:'dark', text:'<b>The Darkroom:</b> the key is in the Vault. Its door stays open only while something heavy sits on the Archive plate. The roll shutter runs on a timer.'},
+    {zone:'stacks', text:'<b>Archive Stacks:</b> the last key is in the Vault, whose door needs both floor plates pressed. Two photos promise to unlock a door; only one door is truly sealed.'},
+    {text:'The owner comes back on <b>turn 280</b>.'}
+  ],
+  parts:[
+    {src:SEC[1][0], x:0, y:6, zone:'counter', label:'the Front Counter', lock:lockDoor('J','Office Door','brass','#c9a24a',[12,2])},
+    {src:SEC[1][1], x:14, y:0, zone:'dark', label:'the Darkroom', lock:lockDoor('K','Hall Door','steel','#8fa1b8',[18,8])},
+    {src:SEC[1][2], x:34, y:0, zone:'stacks', label:'the Archive Stacks', remap:{X:'Y', V:'W', R:'Q'}, roomNames:{archive:'Upper Archive', vault:'Archive Vault'}, final:true}
+  ],
+  carve:[[13,8,'.'],[14,8,'.'],[33,8,'.'],[34,8,'.']]
+})]}),
+Object.assign(chapterBase(SECTION_CHAPTERS[2]), {levels:[compose(SECTION_CHAPTERS[2], {
+  id:'frost-big', name:'The Frozen Climb', w:39, h:25, doom:260,
+  brief:[
+    'Climb from the <b>Skating Pond</b> up into the <b>Observatory</b> and across to <b>Meridian Hall</b>. Each section hides the key to the next locked door.',
+    'On the ice you slide until something stops you. Mirror shards let Future see what Present sees.',
+    'Past can drag the map to look back at anywhere the hero has already seen.'
+  ],
+  prophecy:[
+    {text:'Three frozen halls, three locked doors. Each hall hides the key to the next.'},
+    {zone:'pond', text:'<b>Skating Pond:</b> the key is on the East Shore. The way on is north of the West Shore. A mirror shard lies in the south corner.'},
+    {zone:'obs', text:'<b>Observatory:</b> the key is in the Star Library. Nothing on the rink stops you on the Dome Shutter row unless you make something. Its thin ice breaks 64 turns after you arrive.'},
+    {zone:'meridian', text:'<b>Meridian Hall:</b> the final key sits in the chest at the heart of the rink. The West Wing chest bites. The water needs a plank; the bottom row needs a stopper.'},
+    {text:'The blizzard comes on <b>turn 260</b>.'}
+  ],
+  parts:[
+    {src:SEC[2][0], x:0, y:14, zone:'pond', label:'the Skating Pond', lock:lockDoor('Z','Pond Gate','frosted','#9fd2e8',[2,0])},
+    {src:SEC[2][1], x:0, y:0, zone:'obs', label:'the Observatory', roomNames:{dome:'Observatory Dome'}, lock:lockDoor('Y','Dome Door','silver','#c3cbd8',[18,2])},
+    {src:SEC[2][2], x:20, y:0, zone:'meridian', label:'Meridian Hall', remap:{D:'P'}, final:true}
+  ],
+  carve:[[2,13,'.'],[2,12,'.'],[19,2,'.'],[20,2,'.']]
+})]}),
+Object.assign(chapterBase(SECTION_CHAPTERS[3]), {levels:[compose(SECTION_CHAPTERS[3], {
+  id:'museum-big', name:'The Heist', w:53, h:21, doom:330,
+  keyNow:'You lift the real hourglass from its case.', keyPast:'The hero took the real hourglass.',
+  brief:[
+    'In through <b>Coat Check</b>, across the <b>Night Museum</b>, down into the <b>Vault of Hours</b>. Each wing hides the key to the next locked door.',
+    'Guards walk the same loops all night. Get caught and you are chased back to the start of the wing you are in.',
+    'Past can drag the map to look back at anywhere the hero has already seen.'
+  ],
+  prophecy:[
+    {text:'Three wings, three locked doors. Each wing hides the key to the next.'},
+    {zone:'coat', text:'<b>Coat Check:</b> the key is in the Coat Room, past the guard in the Long Hall.'},
+    {zone:'museum', text:'<b>Night Museum:</b> the key is in the East Gallery case, which a photo must open. The other two cases are alarmed. The Dock Gate needs weight on the Storage plate.'},
+    {zone:'vault', text:'<b>Vault of Hours:</b> the real hourglass is in the East Vault, locked. Two guards, lasers in the Upper Hall, and a crate to push onto the plate below it.'},
+    {text:'Guard zones: <b>N</b> top, <b>M</b> middle, <b>S</b> bottom; <b>W C E</b> west, center, east.'},
+    {text:'The morning shift arrives on <b>turn 330</b>.'}
+  ],
+  parts:[
+    {src:SEC[3][0], x:0, y:11, zone:'coat', label:'Coat Check', lock:lockDoor('J','Cloakroom Door','oak','#a5733f',[12,2])},
+    {src:SEC[3][1], x:14, y:3, zone:'museum', label:'the Night Museum', lock:lockDoor('K','Gallery Door','brass','#d1b23a',[18,10])},
+    {src:SEC[3][2], x:34, y:0, zone:'vault', label:'the Vault of Hours', remap:{G:'H', case:'case2'}, roomNames:{lobby:'Vault Lobby', storage:'Vault Storage', dock:'Vault Dock'}, final:true}
+  ],
+  carve:[[13,13,'.'],[14,13,'.'],[33,13,'.'],[34,13,'.']]
+})]})
+];
+
+/* =====================================================================
+   SECOND MAPS
+   New big maps built for scrolling, one more per chapter.
+   ===================================================================== */
+const SPIKE_NOW = 'Spikes burst from the floor! You stagger back.';
+
+/* ---------- Chapter 1 · The Bell Tower (climb straight up) ---------- */
+const BELL_CELLAR = {
+  map:[
+    '#######################',
+    '#.....#.......#.......#',
+    '#..C..#.....C.#...C...#',
+    '#.....#...^...#.......#',
+    '###.###...^...####.####',
+    '#.........^...........#',
+    '#.........^...........#',
+    '#.S.......^...........#',
+    '#######################'
+  ],
+  rooms:[
+    {id:'pantry', name:'Pantry', color:'#58a062', word:'green', rect:[0,0,6,3], label:[3,1]},
+    {id:'wine', name:'Wine Cellar', color:'#9566c8', word:'purple', rect:[7,0,13,4], label:[10,1]},
+    {id:'coal', name:'Coal Room', color:'#6c6474', word:'sooty', rect:[14,0,22,4], label:[18,1]},
+    {id:'hall', name:'Cellar Hall', color:'#8b8697', word:'grey', rect:[0,5,22,8], label:[5,5]}
+  ],
+  doors:{},
+  hazards:[{char:'^', name:'Spikes', sub:'Cellar', sym:'▲', pattern:'0011010011001011010011100101',
+    now:SPIKE_NOW, past:'Spikes caught the hero in the Cellar.'}],
+  chests:{'3,2':{kind:'mimic'}, '12,2':{kind:'mimic'}, '18,2':{kind:'key'}}
+};
+const BELL_HALL = {
+  map:[
+    '#######################',
+    '#.....#...............#',
+    '#..C..N..........C....#',
+    '#.....#...............#',
+    '###=######.############',
+    '#oo=ooooo#.#oooooooooo#',
+    '#oo=ooooo#.#oooooooooo#',
+    '#oo=ooooo#.#oooooooooo#',
+    '#oo=ooooo#.#oooooooooo#',
+    '#.................S...#',
+    '#######################'
+  ],
+  rooms:[
+    {id:'loft', name:'Bell Loft', color:'#d8a836', word:'gold', rect:[0,0,5,3], label:[3,1]},
+    {id:'gallery', name:'Rope Gallery', color:'#c4553f', word:'red', rect:[7,0,22,3], label:[14,1]},
+    {id:'chasm', name:'Bell Pit', color:'#4a86c2', word:'blue', rect:[0,4,22,8], label:[16,6]},
+    {id:'ledge', name:'Lower Ledge', color:'#8b8697', word:'grey', rect:[0,9,22,10], label:[6,9]}
+  ],
+  doors:{ N:{kind:'timed', name:'Loft Door', word:'gold', color:'#e2b13a', sub:'Rope Gallery → Bell Loft', open:[[30,36],[52,58],[80,90],[110,130]]} },
+  collapses:[{name:'Rope bridge', sub:'Bell Pit', at:26, cells:cellsOf([[3,4],[3,5],[3,6],[3,7],[3,8]]),
+    now:'A rope snaps somewhere below you.', past:'The rope bridge over the Bell Pit snapped.'}],
+  chests:{'3,2':{kind:'key'}, '17,2':{kind:'mimic'}}
+};
+const BELL_FRY = {
+  map:[
+    '#######################',
+    '#.....#.......#.......#',
+    '#..C..#...E...#...C...#',
+    '#.....#.......#.......#',
+    '###.#####P#######.#####',
+    '#......^.....^........#',
+    '#......^.....^........#',
+    '#......^.....^........#',
+    '###.###################',
+    '#..S..#################',
+    '###.###################'
+  ],
+  rooms:[
+    {id:'west', name:'Choir Loft', color:'#58a062', word:'green', rect:[0,0,6,3], label:[3,1]},
+    {id:'chamber', name:'Great Bell', color:'#d8a836', word:'gold', rect:[7,0,14,3], label:[10,1]},
+    {id:'east', name:'Clock Room', color:'#4a86c2', word:'blue', rect:[15,0,22,3], label:[18,1]},
+    {id:'walk', name:'Bell Walk', color:'#c4553f', word:'red', rect:[0,4,22,7], label:[10,6]},
+    {id:'stair', name:'Spiral Stair', color:'#8b8697', word:'grey', rect:[0,8,6,10], label:null}
+  ],
+  doors:{ P:{kind:'timed', name:'Bell Door', word:'gold', color:'#e2b13a', sub:'Bell Walk → Great Bell', open:[[20,28],[44,52],[70,80],[100,120]]} },
+  hazards:[{char:'^', name:'Bell spikes', sub:'Bell Walk', sym:'▲', pattern:'0110100101100110100110',
+    now:SPIKE_NOW, past:'Spikes caught the hero on the Bell Walk.'}],
+  chests:{'3,2':{kind:'mimic'}, '18,2':{kind:'key'}}
+};
+
+/* ---------- Chapter 2 · Gallery Opening (left to right) ---------- */
+const GAL_PRINT = {
+  map:[
+    '###################',
+    '#.....#.....#.....#',
+    '#..C..#.p...V..C..#',
+    '#.....#..B..#.....#',
+    '#.....#.....#.....#',
+    '##.#######.########',
+    '#.................#',
+    '#.......S.........#',
+    '#.................#',
+    '###################'
+  ],
+  rooms:[
+    {id:'proof', name:'Proof Room', color:'#c8443a', word:'red', rect:[0,0,5,4], label:[3,1]},
+    {id:'press', name:'Press Room', color:'#a0703f', word:'brown', rect:[6,0,11,4], label:[9,1]},
+    {id:'paper', name:'Paper Store', color:'#3e9c94', word:'teal', rect:[12,0,18,4], label:[15,1]},
+    {id:'floor', name:'Shop Floor', color:'#c9b58a', word:'cream', rect:[0,5,18,9], label:[14,8]}
+  ],
+  doors:{ V:{kind:'plate', name:'Store Door', word:'teal', color:'#3e9c94', sub:'Press Room → Paper Store', plates:['8,2']} },
+  chests:{'3,2':{kind:'mimic'}, '15,2':{kind:'key'}},
+  photos:[
+    Object.assign({cx:3,cy:3}, MIRROR_PHOTO),
+    {cx:14,cy:6, note:'Dust will fall from the ceiling.', effect:{type:'none'}, now:'Dust drifts down. Nothing else happens.', past:'Dust fell on the Shop Floor. Nothing changed.'}
+  ]
+};
+const GAL_HALL = {
+  map:[
+    '#####################',
+    '#......#.....#......#',
+    '#.S....X..C..#..C...#',
+    '#......#.....#......#',
+    '###.##########.######',
+    '#...........o.......#',
+    '#...........o.......#',
+    '#...........o.......#',
+    '#####################'
+  ],
+  rooms:[
+    {id:'west', name:'West Wing', color:'#c9b58a', word:'cream', rect:[0,0,6,3], label:[3,1]},
+    {id:'vault', name:'Print Vault', color:'#3e9c94', word:'teal', rect:[7,0,12,3], label:[10,1]},
+    {id:'annex', name:'Annex', color:'#8a6fd0', word:'violet', rect:[13,0,20,3], label:[17,1]},
+    {id:'lower', name:'Long Gallery', color:'#c8443a', word:'red', rect:[0,4,20,8], label:[6,6]}
+  ],
+  doors:{ X:{kind:'sealed', name:'Vault Door', word:'teal', color:'#3e9c94', sub:'West Wing → Print Vault'} },
+  chests:{'10,2':{kind:'key'}, '16,2':{kind:'mimic'}},
+  photos:[
+    {cx:6,cy:2, note:'A sealed door beside this spot will unlock.', effect:{type:'unseal', id:'X'}, now:'Something clicks. The door beside you swings loose.', past:'The sealed Vault Door unlocked by itself.'},
+    {cx:6,cy:6, note:'A sealed door beside this spot will unlock.', effect:{type:'none'}, now:'A latch rattles somewhere. Nothing opens.', past:'A latch rattled in the Long Gallery. Nothing changed.'},
+    {cx:11,cy:6, note:'A plank will drop just ahead of where this was taken.', effect:{type:'plank', at:[12,6]}, now:'A plank crashes down across the gap in front of you!', past:'A plank fell across the gap in the Long Gallery.'},
+    {cx:11,cy:5, note:'A plank will drop just ahead of where this was taken.', effect:{type:'none'}, now:'Something creaks overhead. Nothing falls.', past:'The Long Gallery ceiling creaked. Nothing changed.'}
+  ]
+};
+const GAL_COLL = {
+  map:[
+    '###################',
+    '#......#....#.....#',
+    '#.S....#.p..W..C..#',
+    '#......#....#.....#',
+    '###.#####.#########',
+    '#..............#..#',
+    '#..............Q.E#',
+    '#..........B..p#..#',
+    '#..............#..#',
+    '###################'
+  ],
+  rooms:[
+    {id:'entry', name:'Entry Hall', color:'#c9b58a', word:'cream', rect:[0,0,6,3], label:[3,1]},
+    {id:'study', name:'Study', color:'#a0703f', word:'brown', rect:[7,0,11,3], label:[9,1]},
+    {id:'treasury', name:'Treasury', color:'#d8a836', word:'gold', rect:[12,0,18,3], label:[15,1]},
+    {id:'lower', name:'Collection Hall', color:'#4d78b6', word:'blue', rect:[0,4,14,9], label:[6,8]},
+    {id:'exit', name:'Back Stair', color:'#8b8697', word:'grey', rect:[15,4,18,9], label:null}
+  ],
+  doors:{
+    W:{kind:'plate', need:'all', name:'Treasury Door', word:'gold', color:'#d8a836', sub:'Study → Treasury', plates:['9,2','14,7']},
+    Q:{kind:'timed', name:'Back Shutter', word:'grey', color:'#9aa3ad', sub:'Collection Hall → Back Stair', open:[[30,40],[60,75],[100,140]]}
+  },
+  chests:{'15,2':{kind:'key'}},
+  photos:[
+    {cx:9,cy:3, note:'Something heavy will fall just above where this was taken.', effect:{type:'crate', at:[9,2]}, now:'A heavy crate thuds down right in front of you!', past:'A crate fell onto the Study floor plate.'},
+    {cx:3,cy:3, note:'Something heavy will fall just above where this was taken.', effect:{type:'none'}, now:'Something thumps upstairs. Nothing lands.', past:'Something thumped above the Entry Hall. Nothing changed.'},
+    Object.assign({cx:12,cy:8}, MIRROR_PHOTO)
+  ]
+};
+
+/* ---------- Chapter 3 · Glacier Run (climb straight up) ---------- */
+const GLA_CAVE = {
+  map:[
+    '###############',
+    '#...#*****r**C#',
+    '#...#r********#',
+    '#.S.**r*******#',
+    '#...#****r****#',
+    '#...#*********#',
+    '#...#*********#',
+    '#...#*******r*#',
+    '#...#*********#',
+    '#..m#*********#',
+    '###############'
+  ],
+  rooms:[
+    {id:'camp', name:'Base Camp', color:'#4fa39a', word:'teal', rect:[0,0,4,10], label:[2,7]},
+    {id:'cave', name:'Ice Cave', color:'#a9d6ea', word:'icy', rect:[5,0,14,10], label:[9,9]}
+  ],
+  doors:{},
+  chests:{'13,1':{kind:'key'}}
+};
+const GLA_CREV = {
+  map:[
+    '###############',
+    '#.....#.......#',
+    '#..C..#.......#',
+    '#.....D...m...#',
+    '###%#########.#',
+    '#oo%ooooooooo.#',
+    '#oo%ooooooooo.#',
+    '#oo%ooooooooo.#',
+    '#..%..........#',
+    '#.S...........#',
+    '##.############'
+  ],
+  rooms:[
+    {id:'shelf', name:'Ice Shelf', color:'#8a6fd0', word:'violet', rect:[0,0,5,3], label:[3,1]},
+    {id:'camp', name:'North Camp', color:'#e0b03c', word:'gold', rect:[7,0,14,3], label:[10,1]},
+    {id:'crev', name:'Crevasse', color:'#4a86c2', word:'blue', rect:[0,4,12,7], label:[8,6]},
+    {id:'shore', name:'South Shore', color:'#bfc6d2', word:'silver', rect:[0,8,14,10], label:[8,9]}
+  ],
+  doors:{ D:{kind:'timed', name:'Shelf Door', word:'violet', color:'#8a6fd0', sub:'North Camp → Ice Shelf', open:[[8,14],[30,38],[55,65],[80,100]]} },
+  collapses:[{name:'Thin ice', sub:'Crevasse crossing', at:20, char:'%', now:'A long crack splits the air.', past:'The thin ice over the Crevasse broke apart.'}],
+  chests:{'3,2':{kind:'key'}}
+};
+const GLA_SUMMIT = {
+  map:[
+    '###############',
+    '#.E.#*********#',
+    '#...P*********#',
+    '#...#*********#',
+    '#####*****C***#',
+    '#*************#',
+    '#***r*********#',
+    '#*********r***#',
+    '#**r**********#',
+    '#*************#',
+    '###########S###'
+  ],
+  rooms:[
+    {id:'hut', name:'Summit Hut', color:'#e0b03c', word:'gold', rect:[0,0,3,3], label:[2,1]},
+    {id:'field', name:'Ice Field', color:'#a9d6ea', word:'icy', rect:[4,0,14,10], label:[9,9]}
+  ],
+  doors:{ P:{kind:'timed', name:'Hut Door', word:'gold', color:'#e0b03c', sub:'Ice Field → Summit Hut', open:[[12,20],[34,44],[60,72],[90,120]]} },
+  chests:{'10,4':{kind:'key'}},
+  photos:[
+    {cx:11,cy:10, note:'A block of ice will crash down far to the north.', effect:{type:'crate', at:[11,1]}, now:'Far to the north, something heavy crashes onto the ice.', past:'A block of ice fell near the top of the Ice Field.'},
+    {cx:13,cy:9, note:'A block of ice will crash down far to the north.', effect:{type:'none'}, now:'Snow drifts down. Nothing else happens.', past:'Snow fell on the Ice Field. Nothing changed.'},
+    Object.assign({cx:2,cy:7}, MIRROR_PHOTO)
+  ]
+};
+
+/* ---------- Chapter 4 · The Late Exhibit (left to right) ---------- */
+const EXH_TICKETS = {
+  map:[
+    '###################',
+    '#.....#.....#.....#',
+    '#..C..#..C..#.....#',
+    '#.....#.....#.....#',
+    '###.#####.#####.###',
+    '#.................#',
+    '#.................#',
+    '#.................#',
+    '#######.###########',
+    '#.....S...........#',
+    '###################'
+  ],
+  rooms:[
+    {id:'west', name:'Lost Property', color:'#b8483c', word:'red', rect:[0,0,5,4], label:[3,1]},
+    {id:'mid', name:'Ticket Office', color:'#4f9a5a', word:'green', rect:[6,0,11,4], label:[9,1]},
+    {id:'east', name:'Cloak Room', color:'#4a7fc0', word:'blue', rect:[12,0,18,4], label:[15,1]},
+    {id:'hall', name:'Ticket Hall', color:'#cfc8b6', word:'white marble', rect:[0,5,18,7], label:[5,6]},
+    {id:'queue', name:'Queue', color:'#8f5a8a', word:'plum', rect:[0,8,18,10], label:[12,9]}
+  ],
+  doors:{},
+  chests:{'3,2':{kind:'mimic'}, '9,2':{kind:'key', seal:'case'}},
+  photos:[
+    {cx:9,cy:3, note:'The glass case here will slide open.', effect:{type:'unseal', id:'case'}, now:'The glass case in front of you slides open.', past:'The case in the Ticket Office slid open.'},
+    {cx:3,cy:3, note:'The glass case here will slide open.', effect:{type:'none'}, now:'The glass hums for a moment. Nothing opens.', past:'A case in Lost Property hummed. Nothing changed.'},
+    {cx:7,cy:7, note:'Everyone in this room will look the other way for a while.', effect:{type:'freeze', turns:8}, now:'A radio crackles. The guard turns away.', past:'The guard stopped and looked away.'}
+  ],
+  guards:[{name:'Hall guard', sub:'Ticket Hall zone', path:loopPath(2,5,16,7), offset:5, zone:[1,5,17,7]}]
+};
+const EXH_COURT = {
+  map:[
+    '#####################',
+    '#.......#...........#',
+    '#.S.....G.....C.....#',
+    '#.......#...........#',
+    '###.#################',
+    '#.......^.....^.....#',
+    '#.......^.....^.....#',
+    '#....B..^.....^..p..#',
+    '#.......^.....^.....#',
+    '#.......^.....^.....#',
+    '#####################'
+  ],
+  rooms:[
+    {id:'foyer', name:'Foyer', color:'#8f5a8a', word:'plum', rect:[0,0,7,3], label:[4,1]},
+    {id:'gallery', name:'Sculpture Gallery', color:'#4a7fc0', word:'blue', rect:[9,0,20,3], label:[16,1]},
+    {id:'court', name:'Sculpture Court', color:'#cfc8b6', word:'white marble', rect:[0,4,20,10], label:[11,9]}
+  ],
+  doors:{ G:{kind:'plate', name:'Gallery Gate', word:'blue', color:'#4a7fc0', sub:'Foyer → Sculpture Gallery', plates:['17,7']} },
+  hazards:[{char:'^', name:'Lasers', sub:'Sculpture Court', sym:'≡', pattern:'1100011001110001100011100',
+    now:'A laser sweeps across you and a buzzer shrieks. You jump back.', past:'The hero tripped a laser in the Sculpture Court.'}],
+  chests:{'14,2':{kind:'key'}},
+  photos:[
+    {cx:12,cy:3, note:'Everyone in this room will look the other way for a while.', effect:{type:'freeze', turns:8}, now:'A radio crackles. The guard turns away.', past:'The gallery guard looked away.'},
+    {cx:11,cy:9, note:'The lights here will flicker.', effect:{type:'none'}, now:'The lights flicker. Nothing else happens.', past:'The Court lights flickered. Nothing changed.'}
+  ],
+  guards:[{name:'Gallery guard', sub:'Sculpture Gallery zone', path:loopPath(9,1,19,3), offset:0, zone:[9,1,19,3]}]
+};
+const EXH_VAULT = {
+  map:[
+    '###################',
+    '#.....#.....#.....#',
+    '#..C..#..C..#..E..#',
+    '#.....#.....#.....#',
+    '###.#####.#####.###',
+    '#..^.....^.....^..#',
+    '#.................#',
+    '#.................#',
+    '#########.#########',
+    '#.......S.........#',
+    '###################'
+  ],
+  rooms:[
+    {id:'west', name:'Hour Room', color:'#d8a836', word:'gold', rect:[0,0,5,3], label:[3,1]},
+    {id:'mid', name:'Minute Room', color:'#4f9a5a', word:'green', rect:[6,0,11,3], label:[9,1]},
+    {id:'east', name:'Exit Hall', color:'#4a7fc0', word:'blue', rect:[12,0,18,3], label:[15,1]},
+    {id:'hall', name:'Clock Hall', color:'#cfc8b6', word:'white marble', rect:[0,4,18,7], label:[12,6]},
+    {id:'entry', name:'Service Door', color:'#8f5a8a', word:'plum', rect:[0,8,18,10], label:[4,9]}
+  ],
+  doors:{},
+  hazards:[{char:'^', name:'Lasers', sub:'Clock Hall doorways', sym:'≡', pattern:'1101100110011011001',
+    now:'A laser sweeps across you and a buzzer shrieks. You jump back.', past:'The hero tripped a laser in the Clock Hall.'}],
+  chests:{'3,2':{kind:'key', seal:'case'}, '9,2':{kind:'mimic'}},
+  photos:[
+    {cx:3,cy:3, note:'The glass case here will slide open.', effect:{type:'unseal', id:'case'}, now:'The glass case in front of you slides open.', past:'The case in the Hour Room slid open.'},
+    {cx:9,cy:3, note:'The glass case here will slide open.', effect:{type:'none'}, now:'The glass hums for a moment. Nothing opens.', past:'A case in the Minute Room hummed. Nothing changed.'},
+    {cx:9,cy:7, note:'Everyone in this room will look the other way for a while.', effect:{type:'freeze', turns:8}, now:'A radio crackles. The guard turns away.', past:'The Clock Hall guard looked away.'},
+    Object.assign({cx:15,cy:9}, MIRROR_PHOTO)
+  ],
+  guards:[{name:'Clock guard', sub:'Clock Hall zone', path:loopPath(1,5,17,7), offset:8, zone:[1,5,17,7]}]
+};
+
+CHAPTERS[0].levels.push(compose(SECTION_CHAPTERS[0], {
+  id:'bell-tower', name:'The Bell Tower', w:23, h:33, doom:230,
+  brief:[
+    'Climb the tower from the <b>Cellar</b> through the <b>Bell Hall</b> to the <b>Belfry</b>. The map runs straight up.',
+    'The rope bridge in the Bell Hall snaps soon after you arrive. If you miss it, the long way round waits on the Loft Door.',
+    'Past can drag the map to look back at anywhere the hero has already seen.'
+  ],
+  prophecy:[
+    {text:'Three floors, three locked doors. Each floor hides the key to the next.'},
+    {zone:'cellar', text:'<b>Cellar:</b> the key is in the Coal Room, across the spikes. The Pantry and Wine Cellar chests bite.'},
+    {zone:'bellhall', text:'<b>Bell Hall:</b> the key is in the Bell Loft. The rope bridge snaps 26 turns after you arrive; after that only the Loft Door leads there.'},
+    {zone:'belfry', text:'<b>Belfry:</b> the last key is in the Clock Room. The way out is behind the Bell Door, under the Great Bell.'},
+    {text:'The tower falls on <b>turn 230</b>.'}
+  ],
+  parts:[
+    {src:BELL_CELLAR, x:0, y:24, zone:'cellar', label:'the Cellar', lock:lockDoor('G','Cellar Hatch','iron','#b0a58f',[18,0])},
+    {src:BELL_HALL, x:0, y:12, zone:'bellhall', label:'the Bell Hall', lock:lockDoor('H','Loft Hatch','bronze','#c08a4a',[3,0])},
+    {src:BELL_FRY, x:0, y:0, zone:'belfry', label:'the Belfry', final:true}
+  ],
+  carve:[[18,23,'.'],[18,22,'.'],[3,11,'.']]
+}));
+
+CHAPTERS[1].levels.push(compose(SECTION_CHAPTERS[1], {
+  id:'gallery-opening', name:'Gallery Opening', w:61, h:10, doom:300,
+  brief:[
+    'A print shop, an exhibition hall and a private collection, end to end. Crates, floor plates and a journal full of look-alike photos.',
+    'Several photos promise the same thing. Only the one taken from where the hero stands will work.',
+    'Past can drag the map to look back at anywhere the hero has already seen.'
+  ],
+  prophecy:[
+    {text:'Three rooms of the gallery, three locked doors. Each room hides the key to the next.'},
+    {zone:'print', text:'<b>Print Shop:</b> the key is in the Paper Store. Its door opens only while something heavy sits on the Press Room plate.'},
+    {zone:'hall', text:'<b>Exhibition Hall:</b> the key is in the sealed Print Vault. The Long Gallery is cut by a gap. Two photos promise each thing; one of each is a lie.'},
+    {zone:'coll', text:'<b>Collection:</b> the last key is in the Treasury, whose door needs both plates pressed. The way out is behind the Back Shutter.'},
+    {text:'The doors lock for the night on <b>turn 300</b>.'}
+  ],
+  parts:[
+    {src:GAL_PRINT, x:0, y:0, zone:'print', label:'the Print Shop', lock:lockDoor('J','Shop Door','brass','#c9a24a',[18,2])},
+    {src:GAL_HALL, x:20, y:0, zone:'hall', label:'the Exhibition Hall', lock:lockDoor('K','Annex Door','steel','#8fa1b8',[20,2])},
+    {src:GAL_COLL, x:42, y:0, zone:'coll', label:'the Collection', final:true}
+  ],
+  carve:[[19,2,'.'],[20,2,'.'],[41,2,'.'],[42,2,'.']]
+}));
+
+CHAPTERS[2].levels.push(compose(SECTION_CHAPTERS[2], {
+  id:'glacier', name:'Glacier Run', w:15, h:35, doom:260,
+  brief:[
+    'Climb from the <b>Ice Cave</b> across the <b>Crevasse</b> to the <b>Summit</b>. The map runs straight up.',
+    'On the ice you slide until something stops you. A photo can drop a block of ice to stop you where you need to be.',
+    'Past can drag the map to look back at anywhere the hero has already seen.'
+  ],
+  prophecy:[
+    {text:'Three stages of the climb, three locked doors. Each stage hides the key to the next.'},
+    {zone:'cave', text:'<b>Ice Cave:</b> the key is in the far corner of the cave. The rocks are your only brakes.'},
+    {zone:'crev', text:'<b>Crevasse:</b> the key is on the Ice Shelf. The thin ice breaks 20 turns after you arrive; after that the way round is through North Camp and the Shelf Door.'},
+    {zone:'summit', text:'<b>Summit:</b> the last key sits out on the Ice Field. Nothing stops you at the top of the field unless you make something.'},
+    {text:'The storm closes the mountain on <b>turn 260</b>.'}
+  ],
+  parts:[
+    {src:GLA_CAVE, x:0, y:24, zone:'cave', label:'the Ice Cave', lock:lockDoor('Z','Cave Gate','frosted','#9fd2e8',[2,0])},
+    {src:GLA_CREV, x:0, y:12, zone:'crev', label:'the Crevasse', lock:lockDoor('Y','Camp Gate','silver','#c3cbd8',[11,0])},
+    {src:GLA_SUMMIT, x:0, y:0, zone:'summit', label:'the Summit', final:true}
+  ],
+  carve:[[2,23,'.'],[11,11,'.']]
+}));
+
+CHAPTERS[3].levels.push(compose(SECTION_CHAPTERS[3], {
+  id:'late-exhibit', name:'The Late Exhibit', w:61, h:11, doom:330,
+  keyNow:'You lift the real hourglass from its case.', keyPast:'The hero took the real hourglass.',
+  brief:[
+    'In through the <b>Ticket Hall</b>, across the <b>Sculpture Court</b>, into the <b>Clock Hall</b>. Each room hides the key to the next locked door.',
+    'Guards walk the same loops all night. Get caught and you are chased back to the start of the room you are in.',
+    'Past can drag the map to look back at anywhere the hero has already seen.'
+  ],
+  prophecy:[
+    {text:'Three rooms, three locked doors. Each room hides the key to the next.'},
+    {zone:'tickets', text:'<b>Ticket Hall:</b> the key is in the Ticket Office case, which a photo must open. The Lost Property case is alarmed.'},
+    {zone:'court', text:'<b>Sculpture Court:</b> the key is in the Sculpture Gallery, behind a gate that opens while something heavy rests on the Court plate. A guard circles the Gallery.'},
+    {zone:'clock', text:'<b>Clock Hall:</b> the real hourglass is locked in the Hour Room case. Lasers guard every doorway. The way out is the Exit Hall.'},
+    {text:'Guard zones: <b>N</b> top, <b>M</b> middle, <b>S</b> bottom; <b>W C E</b> west, center, east.'},
+    {text:'The morning shift arrives on <b>turn 330</b>.'}
+  ],
+  parts:[
+    {src:EXH_TICKETS, x:0, y:0, zone:'tickets', label:'the Ticket Hall', remap:{case:'caseA'}, lock:lockDoor('J','Cloak Door','oak','#a5733f',[18,2])},
+    {src:EXH_COURT, x:20, y:0, zone:'court', label:'the Sculpture Court', lock:lockDoor('K','Gallery Door','brass','#d1b23a',[20,2])},
+    {src:EXH_VAULT, x:42, y:0, zone:'clock', label:'the Clock Hall', remap:{case:'caseB'}, final:true}
+  ],
+  carve:[[19,2,'.'],[20,2,'.'], ...Array.from({length:8}, (_,i) => [41,2+i,'.']), [42,9,'.']]
+}));
+
 /* ===== Online config: fill these in on your GitHub Pages copy ===== */
 const SUPABASE_URL = 'https://cahlwvxbssmaeqgyjggl.supabase.co';
 const SUPABASE_ANON_KEY = 'sb_publishable_y8zwTkRr_CIrQYZd1KKpdw_zyXWwGQz';
@@ -1131,6 +1747,8 @@ function prepLevel(L){
   }
   L.photos = L.photos || [];
   L.collapses.forEach(g => { g.set = g.cells ? new Set(g.cells) : null; });
+  L.hazards.forEach(h => { h.set = h.cells ? new Set(h.cells) : null; });
+  L.zones = L.zones || [];
   L.crateName = L.crateName || 'crate';
   L.fallNow = L.fallNow || 'You step into nothing and fall! You wake back in the '+roomNameAt(L,L.sx,L.sy)+'.';
   L.fallPast = L.fallPast || 'The hero fell into the chasm.';
@@ -1152,7 +1770,12 @@ function roomAt(x,y){ return LV.rooms.find(r => x>=r.rect[0] && y>=r.rect[1] && 
 function doorOpen(id,t,st){
   const d = LV.doors[id];
   if (!d) return true;
-  if (d.kind==='timed') return d.open.some(([a,b]) => t>=a && t<=b);
+  if (d.kind==='timed'){
+    let tt = t;
+    if (d.zone){ const base = st && st.trig ? st.trig[d.zone] : undefined; if (base===undefined) return false; tt = t - base; }
+    return d.open.some(([a,b]) => tt>=a && tt<=b);
+  }
+  if (d.kind==='lock') return !!st && st.keys.includes(d.key);
   if (d.kind==='plate'){
     if (!st) return false;
     const pressed = k => st.crates.includes(k) || K(st.x,st.y)===k;
@@ -1161,17 +1784,22 @@ function doorOpen(id,t,st){
   if (d.kind==='sealed') return !!st && st.unsealed.includes(id);
   return false;
 }
-function collapsedAt(x,y,t){
+function collapseTurn(g,st){
+  if (!g.zone) return g.at;
+  const base = st && st.trig ? st.trig[g.zone] : undefined;
+  return base===undefined ? Infinity : base + g.at;
+}
+function collapsedAt(x,y,t,st){
   for (const g of LV.collapses){
-    if (t < g.at) continue;
+    if (t < collapseTurn(g,st)) continue;
     if (g.set ? g.set.has(K(x,y)) : ch(x,y)===g.char) return true;
   }
   return false;
 }
 function patched(st,x,y){ const k = K(x,y); return st.planks.includes(k) || st.filled.includes(k); }
-function pitAt(st,x,y,t){ const c = ch(x,y); if (c!=='o' && !collapsedAt(x,y,t)) return false; return !patched(st,x,y); }
+function pitAt(st,x,y,t){ const c = ch(x,y); if (c!=='o' && !collapsedAt(x,y,t,st)) return false; return !patched(st,x,y); }
 function iceAt(st,x,y,t){ const c = ch(x,y); return (c==='*' || c==='%') && !pitAt(st,x,y,t) && !patched(st,x,y); }
-function hazardAt(x,y){ const c = ch(x,y); return LV.hazards.find(h => h.char===c) || null; }
+function hazardAt(x,y){ const c = ch(x,y), k = K(x,y); return LV.hazards.find(h => h.set ? h.set.has(k) : h.char===c) || null; }
 function hazardUp(h,t){ return h.pattern[t % h.pattern.length]==='1'; }
 function guardPos(g,steps){ return g.path[((steps + (g.offset||0)) % g.path.length + g.path.length) % g.path.length]; }
 function guardsAt(st){ return LV.guards.map(g => guardPos(g, st.gsteps)); }
@@ -1200,23 +1828,38 @@ function crateCanEnter(st,x,y,t){
 
 /* ===== Simulation: state = replay of moves + Future's dives ===== */
 const DIRS = {U:[0,-1],D:[0,1],L:[-1,0],R:[1,0],W:[0,0],V:[0,0]};
+function zoneAt(x,y){ return (LV.zones||[]).find(z => x>=z.rect[0] && y>=z.rect[1] && x<=z.rect[2] && y<=z.rect[3]) || null; }
+/* Reaching a section starts its timers and makes it the new respawn point. */
+function enterZones(n, t, say){
+  const z = zoneAt(n.x, n.y);
+  if (!z || n.trig[z.name]!==undefined) return;
+  n.trig = Object.assign({}, n.trig, {[z.name]: t});
+  n.spawn = z.spawn.slice();
+  if (say && t>0) say('You step into '+z.label+'.', 'The hero reached '+z.label+'.', 'event');
+}
 function initState(){
-  return {t:0, x:LV.sx, y:LV.sy, spawn:[LV.sx,LV.sy], hearts:3, key:false, status:'playing',
+  const s = {t:0, x:LV.sx, y:LV.sy, spawn:[LV.sx,LV.sy], hearts:3, key:false, keys:[], trig:{}, status:'playing',
     opened:[], crates:LV.crates0.slice(), planks:[], filled:[], unsealed:[], taken:[], used:[],
     shards:0, focus:LV.focus, mirrorUntil:-1, freezeUntil:-1, gsteps:0,
     msg:'You wake in the '+roomNameAt(LV,LV.sx,LV.sy)+'. It is very dark.', lastDive:null,
     log:[{t:0, text:'The hero woke in the '+roomNameAt(LV,LV.sx,LV.sy)+'.', kind:'event'}]};
+  enterZones(s, 0, null);
+  return s;
 }
 function cloneState(s){
   return Object.assign({}, s, {opened:s.opened.slice(), crates:s.crates.slice(), planks:s.planks.slice(),
-    filled:s.filled.slice(), unsealed:s.unsealed.slice(), taken:s.taken.slice(), used:s.used.slice(), spawn:s.spawn.slice()});
+    filled:s.filled.slice(), unsealed:s.unsealed.slice(), taken:s.taken.slice(), used:s.used.slice(), spawn:s.spawn.slice(), keys:s.keys.slice()});
 }
 function blockText(r,st){
   if (r==='wall') return 'Your hands find cold stone. A wall.';
   if (r==='rock') return LV.scene==='studio' ? 'A worktable is in the way.' : (LV.scene==='frost' ? 'A frozen boulder is in the way.' : 'Something solid is in the way.');
   if (r==='gate') return 'The way out is locked, and you have nothing to open it with.';
   if (r==='sealed') return LV.sealedNow;
-  if (r.startsWith('door:')){ const d = LV.doors[r.slice(5)]; return 'A '+d.word+' door blocks the way. It is shut tight.'; }
+  if (r.startsWith('door:')){
+    const d = LV.doors[r.slice(5)];
+    if (d.kind==='lock') return 'A heavy '+d.word+' door with a keyhole. It is locked, and you do not have its key.';
+    return 'A '+d.word+' door blocks the way. It is shut tight.';
+  }
   return 'Something blocks the way.';
 }
 function respawn(n){ n.x = n.spawn[0]; n.y = n.spawn[1]; }
@@ -1267,6 +1910,7 @@ function step(s,a){
     }
   }
 
+  enterZones(n, t, say);
   const here = ch(n.x,n.y), hk = K(n.x,n.y);
   if (here==='E' && (!LV.needsKey || n.key)){
     n.status = 'won';
@@ -1284,7 +1928,12 @@ function step(s,a){
       const info = LV.chests[hk] || {kind:'mimic'};
       n.opened.push(hk);
       const room = roomNameAt(LV,n.x,n.y);
-      if (info.kind==='key'){ n.key = true; say(LV.keyNow, LV.keyPast || ('The hero opened the chest in the '+room+' and found the key.'), 'good'); }
+      if (info.kind==='key' && info.opens){
+        if (!n.keys.includes(info.opens)) n.keys.push(info.opens);
+        const d = Object.values(LV.doors).find(d => d.kind==='lock' && d.key===info.opens);
+        say('Inside the chest: an iron key'+(d ? ' with a '+d.word+' tag.' : '.'), 'The hero found a key in the '+room+'.', 'good');
+      }
+      else if (info.kind==='key'){ n.key = true; say(LV.keyNow, LV.keyPast || ('The hero opened the chest in the '+room+' and found the key.'), 'good'); }
       else if (info.kind==='shard'){ n.shards += LV.shardCharges; say('Inside the chest: a mirror shard.','The hero found a mirror shard in the '+room+'.','good'); }
       else { n.hearts--; say(LV.mimicNow, LV.mimicPast || ('A chest in the '+room+' was a mimic. It bit the hero.'), 'bad'); }
     } else if (here==='m' && !n.taken.includes(hk)){
@@ -1308,7 +1957,7 @@ function step(s,a){
     if (near) say('Footsteps, very close.');
   }
 
-  for (const c of LV.collapses) if (t===c.at) say(c.now, c.past, 'event');
+  for (const c of LV.collapses) if (t===collapseTurn(c,n)) say(c.now, c.past, 'event');
   if (t===LV.doom-8) say('The walls start to shake.','The walls began to shake.','event');
   if (n.status==='playing'){
     if (n.hearts<=0){ n.status='lost'; say('Your last heart gives out.','The hero ran out of hearts.','bad'); }
@@ -1579,6 +2228,12 @@ function drawDoorClosed(ctx,px,py,ts,h,id){
   const b = Math.max(2,Math.round(ts/8));
   for (let i=1;i<4;i++) ctx.fillRect(px+Math.round(i*ts/4)-1, py-h+Math.round(ts*0.18), Math.max(1,Math.round(b/2)), Math.round(ts*0.64));
   ctx.fillStyle = col; ctx.fillRect(px, py-h+Math.round(ts*0.42), ts, Math.max(2,Math.round(ts/9)));
+  if (d.kind==='lock'){
+    const s = Math.max(3,Math.round(ts/5)), cx = px+Math.round(ts/2), cy = py-h+Math.round(ts*0.46);
+    ctx.fillStyle = '#e8d9a8'; ctx.fillRect(cx-s, cy-s, s*2, s*2);
+    ctx.fillStyle = '#1c140c'; ctx.fillRect(cx-Math.max(1,Math.round(s/3)), cy-Math.round(s*0.6), Math.max(2,Math.round(s*0.66)), Math.round(s*0.7));
+    ctx.fillRect(cx-Math.max(1,Math.round(s/6)), cy, Math.max(1,Math.round(s/3)), Math.round(s*0.7));
+  }
   if (d.kind==='sealed'){
     ctx.fillStyle = '#efe8da';
     const s = Math.max(3,Math.round(ts/5));
@@ -1711,7 +2366,7 @@ function drawStartRune(ctx,px,py,ts){
 /* cam: {x0,y0,cols,rows,ts,h,vis(x,y),noHero} */
 function drawWorld(ctx,st,cam){
   const {ts,h} = cam, t = st.t;
-  const P = (x,y) => [(x-cam.x0)*ts, (y-cam.y0)*ts + h];
+  const P = (x,y) => [(x-cam.x0)*ts + (cam.ox||0), (y-cam.y0)*ts + h + (cam.oy||0)];
   const guards = LV.guards.map(g => {
     const [gx,gy] = guardPos(g, st.gsteps), [nx,ny] = guardPos(g, st.gsteps+1);
     return {x:gx, y:gy, dir:[Math.sign(nx-gx), Math.sign(ny-gy)]};
@@ -1838,10 +2493,11 @@ function drawPhoto(cv,wrap,p){
 }
 
 /* Small map preview for the stage-select page */
-function drawThumb(cv, level, ts){
+function drawThumb(cv, level, maxW, maxH){
   const saved = LV;
   LV = level;
   try {
+    const ts = Math.max(2, Math.floor(Math.min(maxW / LV.W, (maxH || 140) / LV.H)));
     const h = Math.round(ts*0.3), cw = ts*LV.W, chh = ts*LV.H + h;
     const dpr = window.devicePixelRatio || 1;
     cv.width = Math.round(cw*dpr); cv.height = Math.round(chh*dpr);
@@ -1852,6 +2508,94 @@ function drawThumb(cv, level, ts){
     ctx.fillStyle = SC().void; ctx.fillRect(0,0,cw,chh);
     drawWorld(ctx, initState(), {x0:0,y0:0,cols:LV.W,rows:LV.H,ts,h,vis:()=>true});
   } finally { LV = saved; }
+}
+
+/* ===== Past: a camera over the explored map =====
+   Only tiles the hero has seen are drawn; the rest stays black. */
+function pastTileSize(vw, vh){
+  const fitWhole = Math.min(Math.floor(vw/LV.W), Math.floor(vh/(LV.H+0.3)));
+  return Math.max(12, Math.min(64, Math.max(fitWhole, Math.floor(vh/15))));
+}
+function drawPastView(cv, wrap, st, explored, trail, cam, fh){
+  const vw = wrap.clientWidth;
+  if (!vw) return null;
+  const vh = fh && wrap.clientHeight > 80 ? wrap.clientHeight : Math.round(Math.min(vw*0.66, 560));
+  const dpr = window.devicePixelRatio || 1;
+  if (cv.width !== Math.round(vw*dpr) || cv.height !== Math.round(vh*dpr)){ cv.width = Math.round(vw*dpr); cv.height = Math.round(vh*dpr); }
+  cv.style.width = vw+'px'; cv.style.height = vh+'px';
+  const ctx = cv.getContext('2d');
+  ctx.setTransform(dpr,0,0,dpr,0,0);
+  ctx.imageSmoothingEnabled = false;
+  const ts = pastTileSize(vw, vh), h = Math.round(ts*0.3);
+  // keep the camera inside the map (or centre a map smaller than the view)
+  const halfW = vw/ts/2, halfH = (vh-h)/ts/2;
+  cam.cx = LV.W <= halfW*2 ? LV.W/2 : Math.max(halfW, Math.min(LV.W-halfW, cam.cx));
+  cam.cy = LV.H <= halfH*2 ? LV.H/2 : Math.max(halfH, Math.min(LV.H-halfH, cam.cy));
+  const left = cam.cx*ts - vw/2, top = cam.cy*ts - (vh-h)/2;
+  const x0 = Math.floor(left/ts), y0 = Math.floor(top/ts);
+  const view = {x0:x0-1, y0:y0-1, cols:Math.ceil(vw/ts)+3, rows:Math.ceil(vh/ts)+3, ts, h,
+    ox:-(left - (x0-1)*ts), oy:-(top - (y0-1)*ts), vis:(x,y) => x>=0 && y>=0 && x<LV.W && y<LV.H && explored.has(K(x,y))};
+  ctx.fillStyle = '#050407'; ctx.fillRect(0,0,vw,vh);
+  drawWorld(ctx, st, view);
+  const P = (x,y) => [(x-view.x0)*ts + view.ox, (y-view.y0)*ts + h + view.oy];
+  // soften the edge of the explored area into the dark
+  for (let y=view.y0; y<view.y0+view.rows; y++) for (let x=view.x0; x<view.x0+view.cols; x++){
+    if (!view.vis(x,y)) continue;
+    let dark = 0;
+    for (const [dx,dy] of [[1,0],[-1,0],[0,1],[0,-1]]) if (!explored.has(K(x+dx,y+dy))) dark++;
+    if (dark){ const [px,py] = P(x,y); ctx.fillStyle = 'rgba(5,4,7,'+(0.16*dark)+')'; ctx.fillRect(px, py-h, ts, ts+h); }
+  }
+  // footprints: where the hero walked just before this moment
+  trail.forEach(([x,y], i) => {
+    if (x===st.x && y===st.y) return;
+    const [px,py] = P(x,y), a = 0.15 + 0.5*(i+1)/trail.length, s = Math.max(2, Math.round(ts/9));
+    ctx.fillStyle = 'rgba(242,193,78,'+a.toFixed(2)+')';
+    ctx.fillRect(px+Math.round(ts*0.32), py+Math.round(ts*0.42), s, s);
+    ctx.fillRect(px+Math.round(ts*0.56), py+Math.round(ts*0.58), s, s);
+  });
+  // room names, once any of the room has been seen
+  const fs = Math.max(9, Math.round(ts*0.32));
+  ctx.font = '700 '+fs+'px Silkscreen, "Courier New", monospace';
+  ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+  for (const r of LV.rooms){
+    if (!r.label || !explored.has(K(r.label[0], r.label[1]))) continue;
+    const [px,py] = P(r.label[0], r.label[1]);
+    const text = r.name.toUpperCase(), cx = px+ts/2, cy = py+Math.round(ts*0.32);
+    if (cx < -200 || cx > vw+200 || cy < -40 || cy > vh+40) continue;
+    const tw = ctx.measureText(text).width + 8;
+    ctx.fillStyle = 'rgba(10,9,13,.72)';
+    ctx.fillRect(Math.round(cx-tw/2), Math.round(cy-fs*0.7), Math.round(tw), Math.round(fs*1.4));
+    ctx.fillStyle = mix(r.color,'#ffffff',0.35);
+    ctx.fillText(text, cx, cy+1);
+  }
+  return {ts, vw, vh};
+}
+function drawMinimap(cv, st, explored, cam, view){
+  const s = Math.max(2, Math.min(6, Math.floor(Math.min(280/LV.W, 170/LV.H))));
+  const w = LV.W*s, hh = LV.H*s, dpr = window.devicePixelRatio || 1;
+  if (cv.width !== w*dpr){ cv.width = w*dpr; cv.height = hh*dpr; }
+  cv.style.width = w+'px'; cv.style.height = hh+'px';
+  const ctx = cv.getContext('2d');
+  ctx.setTransform(dpr,0,0,dpr,0,0);
+  ctx.fillStyle = '#050407'; ctx.fillRect(0,0,w,hh);
+  for (let y=0; y<LV.H; y++) for (let x=0; x<LV.W; x++){
+    if (!explored.has(K(x,y))) continue;
+    const c = ch(x,y);
+    let col;
+    if (c==='#') col = '#4a4552';
+    else if (LV.doors[c]) col = LV.doors[c].color;
+    else if (pitAt(st,x,y,st.t)) col = '#0d0c12';
+    else if (c==='*' || c==='%') col = '#9cc9dd';
+    else { const r = roomAt(x,y); col = r ? mix('#2b2733', r.color, 0.55) : '#3a3542'; }
+    ctx.fillStyle = col; ctx.fillRect(x*s, y*s, s, s);
+  }
+  ctx.fillStyle = '#f2c14e'; ctx.fillRect(st.x*s-1, st.y*s-1, s+2, s+2);
+  if (view){
+    const vw = view.vw/view.ts, vh = view.vh/view.ts;
+    ctx.strokeStyle = '#8dbacd'; ctx.lineWidth = 1;
+    ctx.strokeRect(Math.round((cam.cx-vw/2)*s)+0.5, Math.round((cam.cy-vh/2)*s)+0.5, Math.round(vw*s), Math.round(vh*s));
+  }
+  return s;
 }
 
 /* ===== App state ===== */
@@ -1892,7 +2636,6 @@ function markCleared(id){
 
 /* ===== Per-level UI ===== */
 function buildLevelUI(){
-  $('prophecy').innerHTML = LV.prophecy.map(p => '<li>'+p+'</li>').join('');
   const lg = [];
   const firstTimed = Object.values(LV.doors).find(d => d.kind==='timed');
   if (firstTimed) lg.push('<span><i class="blk open" style="background:'+firstTimed.color+';border-color:'+firstTimed.color+'"></i>open</span><span><i class="blk"></i>shut</span>');
@@ -1901,6 +2644,7 @@ function buildLevelUI(){
   if (LV.guards.length) lg.push('<span><i class="blk zone">NW</i>guard zone</span><span><i class="blk zone fz">NW</i>looking away</span>');
   $('legend').innerHTML = lg.join('');
   $('albumBox').hidden = !LV.photos.length;
+  document.querySelector('.seat-future').classList.toggle('no-journal', !LV.photos.length);
   $('mirrorBtn').hidden = !LV.shardCharges;
   $('shardChip').hidden = !LV.shardCharges;
   $('briefEyebrow').textContent = 'Level '+LV.code+' · Chapter '+LV.num+' · '+LV.chapter.name;
@@ -1914,7 +2658,7 @@ function buildLevelUI(){
 
 /* ===== Briefing card ===== */
 const SEAT_TIPS = {
-  past:'You are <b style="color:var(--past)">Past</b>. You see the whole map and the room names, a few turns late. Tell the others what already happened.',
+  past:'You are <b style="color:var(--past)">Past</b>. You can drag around everywhere the hero has already seen, a few turns late. Tell the others what already happened and where things were.',
   present:'You are <b style="color:var(--present)">Present</b>. You move the hero and see one step around. Describe what is under your feet.',
   future:'You are <b style="color:var(--future)">Future</b>. You see what is coming and keep the journal. Warn the others before it happens.'
 };
@@ -2049,6 +2793,71 @@ $('pgNext').addEventListener('click', () => flip(1));
 $('pgPrev').addEventListener('click', () => flip(-1));
 $('book').addEventListener('click', e => { const b = e.target.closest('[data-dive]'); if (b && !b.disabled) dive(+b.dataset.dive); });
 
+/* ===== Past's explorable map ===== */
+const pastCam = {cx:0, cy:0, follow:true};
+let pastCache = null, pastViewInfo = null, miniScale = 2;
+let exploredMemo = {key:'', set:null};
+function exploredUpTo(pi){
+  const key = levelIdx+'|'+moves+'|'+dives+'|'+pi;
+  if (exploredMemo.key===key) return exploredMemo.set;
+  const set = new Set();
+  for (let i=0; i<=pi; i++){
+    const s = states[i];
+    for (let dy=-1; dy<=1; dy++) for (let dx=-1; dx<=1; dx++) set.add(K(s.x+dx, s.y+dy));
+  }
+  exploredMemo = {key, set};
+  return set;
+}
+function trailUpTo(pi){
+  const out = [];
+  for (let i=Math.max(0, pi-12); i<pi; i++){
+    const s = states[i], last = out[out.length-1];
+    if (!last || last[0]!==s.x || last[1]!==s.y) out.push([s.x, s.y]);
+  }
+  return out;
+}
+function drawPast(){
+  if (!pastCache) return;
+  const c = pastCache;
+  pastViewInfo = drawPastView($('pastCanvas'), $('pastWrap'), c.st, c.explored, c.trail, pastCam, fitH());
+  miniScale = drawMinimap($('miniCanvas'), c.st, c.explored, pastCam, pastViewInfo);
+  $('followBtn').hidden = pastCam.follow;
+}
+function followHero(){ pastCam.follow = true; if (pastCache){ pastCam.cx = pastCache.st.x+0.5; pastCam.cy = pastCache.st.y+0.5; } drawPast(); }
+(function(){
+  const cv = $('pastCanvas');
+  let drag = null;
+  cv.addEventListener('pointerdown', e => {
+    if (!pastViewInfo) return;
+    drag = {x:e.clientX, y:e.clientY, cx:pastCam.cx, cy:pastCam.cy, moved:false};
+    try { cv.setPointerCapture(e.pointerId); } catch(err){}
+    cv.classList.add('dragging');
+  });
+  cv.addEventListener('pointermove', e => {
+    if (!drag) return;
+    const dx = e.clientX-drag.x, dy = e.clientY-drag.y;
+    if (!drag.moved && Math.abs(dx)+Math.abs(dy) < 4) return;
+    drag.moved = true;
+    pastCam.follow = false;
+    pastCam.cx = drag.cx - dx/pastViewInfo.ts;
+    pastCam.cy = drag.cy - dy/pastViewInfo.ts;
+    drawPast();
+  });
+  const end = () => { drag = null; cv.classList.remove('dragging'); };
+  cv.addEventListener('pointerup', end);
+  cv.addEventListener('pointercancel', end);
+  cv.addEventListener('dblclick', followHero);
+  $('miniCanvas').addEventListener('click', e => {
+    const r = $('miniCanvas').getBoundingClientRect();
+    const scale = r.width / LV.W;
+    pastCam.follow = false;
+    pastCam.cx = (e.clientX - r.left)/scale;
+    pastCam.cy = (e.clientY - r.top)/scale;
+    drawPast();
+  });
+  $('followBtn').addEventListener('click', followHero);
+})();
+
 /* ===== Render ===== */
 function underText(st){
   const c = ch(st.x,st.y), k = K(st.x,st.y);
@@ -2059,7 +2868,7 @@ function underText(st){
   if (c==='%') return 'The ice under you creaks. It is thin here.';
   if (c==='p') return 'You are standing on a floor plate.';
   const r = roomAt(st.x,st.y);
-  return r ? 'The floor here is '+r.word+'.' : '';
+  return r ? 'The floor here is '+r.word+'.' : 'You are in a narrow stone corridor.';
 }
 
 function render(){
@@ -2076,8 +2885,11 @@ function render(){
   const canTune = isSeat('past');
   $('delayDown').disabled = !canTune || pastDelay<=1;
   $('delayUp').disabled = !canTune || pastDelay>=6;
-  document.querySelector('.seat-past .seat-rule').textContent = 'Sees the whole map, but '+pastDelay+' turn'+(pastDelay===1?'':'s')+' late.';
-  drawFullMap($('pastCanvas'), $('pastWrap'), past, fh);
+  document.querySelector('.seat-past .seat-rule').textContent = 'Sees everywhere the hero has been, '+pastDelay+' turn'+(pastDelay===1?'':'s')+' late.';
+  const pi = states.indexOf(past);
+  pastCache = {st:past, explored:exploredUpTo(pi), trail:trailUpTo(pi)};
+  if (pastCam.follow){ pastCam.cx = past.x+0.5; pastCam.cy = past.y+0.5; }
+  drawPast();
   const entries = past.log.filter(e => e.t <= past.t).slice(fh ? -14 : -6).reverse();
   $('pastLog').innerHTML = entries.length
     ? entries.map(e => '<li class="'+e.kind+'"><span class="lt">T'+e.t+'</span><span>'+e.text+'</span></li>').join('')
@@ -2088,7 +2900,9 @@ function render(){
   $('hearts').innerHTML = [0,1,2].map(i => '<i class="heart'+(i<cur.hearts?'':' off')+'"></i>').join('');
   $('hearts').setAttribute('aria-label', cur.hearts+' of 3 hearts');
   const kl = LV.keyLabel || 'Key';
-  const kc = $('keyChip'); kc.textContent = cur.key ? kl+' in hand' : 'No '+kl.toLowerCase(); kc.classList.toggle('has', cur.key);
+  const kc = $('keyChip');
+  kc.textContent = cur.key ? kl+' in hand' : (cur.keys.length ? cur.keys.length+' door key'+(cur.keys.length>1?'s':'') : 'No '+kl.toLowerCase());
+  kc.classList.toggle('has', cur.key || cur.keys.length>0);
   const sc = $('shardChip'); sc.textContent = 'Shards '+cur.shards; sc.classList.toggle('has', cur.shards>0);
   $('presentMsg').innerHTML = (cur.msg ? cur.msg+' ' : '') + '<span class="floor">'+underText(cur)+'</span>';
   drawLocalView($('presentCanvas'), $('presentWrap'), cur, fh ? 0 : 380, fh);
@@ -2121,21 +2935,32 @@ function renderFuture(st){
     drawLocalView($('mirrorCanvas'), $('mirrorWrap'), st, 240);
   }
 
+  const known = z => !z || (st.trig && st.trig[z]!==undefined);
+  // The timeline follows the section the hero reached most recently
+  let curZone = null, curT = -1;
+  for (const [z,tt] of Object.entries(st.trig || {})) if (tt >= curT){ curZone = z; curT = tt; }
+  const live = z => !z || z===curZone;
+  const zoneLabel = z => { const zz = LV.zones.find(q => q.name===z); return zz ? zz.label : z; };
+  // Prophecy: a section's page fills in once the hero reaches it
+  const proph = LV.prophecy.map(p => typeof p==='string' ? {text:p} : p).map(p =>
+    known(p.zone) ? '<li>'+p.text+'</li>' : '<li class="dim">The pages about '+esc(zoneLabel(p.zone))+' are still blank.</li>').join('');
+  if ($('prophecy').dataset.sig !== proph){ $('prophecy').innerHTML = proph; $('prophecy').dataset.sig = proph; }
   const turns = [];
   for (let k=1;k<=WINDOW;k++) turns.push(now+k);
   let html = '<thead><tr><th class="rowh" scope="col">Turn</th>' + turns.map(t => '<th scope="col">'+t+'</th>').join('') + '</tr></thead><tbody>';
   const cell = (cls,sym,tip,style) => '<td><span class="blk '+cls+'" title="'+tip+'"'+(style?' style="'+style+'"':'')+'>'+sym+'</span></td>';
   for (const [id,d] of Object.entries(LV.doors)){
-    if (d.kind!=='timed') continue;
+    if (d.kind!=='timed' || !live(d.zone)) continue;
     html += '<tr><th class="rowh" scope="row">'+d.name+'<small>'+d.sub+'</small></th>';
     for (const t of turns){
       if (t>LV.doom){ html += cell('gone','','Too late'); continue; }
-      const o = doorOpen(id,t,null);
+      const o = doorOpen(id,t,st);
       html += o ? cell('open','',d.name+' open on turn '+t,'background:'+d.color+';border-color:'+d.color) : cell('','',d.name+' shut on turn '+t);
     }
     html += '</tr>';
   }
   for (const hz of LV.hazards){
+    if (!live(hz.zone)) continue;
     html += '<tr><th class="rowh" scope="row">'+hz.name+'<small>'+hz.sub+'</small></th>';
     for (const t of turns){
       if (t>LV.doom){ html += cell('gone','','Too late'); continue; }
@@ -2145,14 +2970,16 @@ function renderFuture(st){
     html += '</tr>';
   }
   for (const c of LV.collapses){
+    if (!live(c.zone)) continue;
     html += '<tr><th class="rowh" scope="row">'+c.name+'<small>'+c.sub+'</small></th>';
     for (const t of turns){
-      const gone = t>=c.at;
+      const gone = t>=collapseTurn(c,st);
       html += gone ? cell('gone','✕',c.name+' gone by turn '+t) : cell('hold','',c.name+' holds on turn '+t);
     }
     html += '</tr>';
   }
   for (const g of LV.guards){
+    if (!live(g.section)) continue;
     html += '<tr><th class="rowh" scope="row">'+g.name+'<small>'+(g.sub || 'Patrol zone')+'</small></th>';
     let gs = st.gsteps;
     for (const t of turns){
@@ -2175,12 +3002,12 @@ function renderFuture(st){
   for (const t of turns){
     if (t > LV.doom) break;
     for (const [id,d] of Object.entries(LV.doors)){
-      if (d.kind!=='timed') continue;
-      const a = doorOpen(id,t-1,null), b = doorOpen(id,t,null);
+      if (d.kind!=='timed' || !live(d.zone)) continue;
+      const a = doorOpen(id,t-1,st), b = doorOpen(id,t,st);
       if (b && !a) ev.push([t,'The '+d.name+' will open.']);
       if (a && !b) ev.push([t,'The '+d.name+' will shut.']);
     }
-    for (const c of LV.collapses) if (t===c.at) ev.push([t,'The '+c.name.toLowerCase()+' will give way.']);
+    for (const c of LV.collapses) if (live(c.zone) && t===collapseTurn(c,st)) ev.push([t,'The '+c.name.toLowerCase()+' will give way.']);
     if (LV.guards.length && t===st.freezeUntil+1 && st.freezeUntil>=now) ev.push([t,'The guards will stop looking away.']);
     if (t===LV.doom) ev.push([t, LV.doomName+' will arrive.']);
   }
@@ -2188,6 +3015,8 @@ function renderFuture(st){
     ? '<li class="quiet">No more future. The run has ended.</li>'
     : ev.length ? ev.map(([t,s]) => '<li><span class="lt">Turn '+t+'</span><span>'+s+'</span></li>').join('')
     : '<li class="quiet">No doors or collapses change in the next '+WINDOW+' turns.</li>';
+  const unknown = LV.zones.filter(z => !known(z.name)).map(z => z.label);
+  if (!ended && unknown.length) $('upcoming').insertAdjacentHTML('beforeend', '<li class="quiet">Not reached yet: '+esc(listJoin(unknown))+'. Their clocks start when the hero walks in.</li>');
 
   if (LV.photos.length){
     $('focus').innerHTML = 'Focus ' + Array.from({length:LV.focus}, (_,i) => '<i class="'+(i<st.focus?'':'off')+'"></i>').join('');
@@ -2222,6 +3051,7 @@ function dive(i){
 }
 /* Set the level on this screen only. */
 function setLevel(i){
+  pastCam.follow = true;
   levelIdx = Math.max(0, Math.min(LEVELS.length-1, i|0));
   LV = LEVELS[levelIdx];
   moves = ''; dives = ''; touch();
@@ -2296,6 +3126,13 @@ document.addEventListener('keydown', e => {
   if (e.target.closest && e.target.closest('button') && (e.key===' ' || e.key==='Enter')) return;
   if (e.metaKey || e.ctrlKey || e.altKey) return;
   const a = KEYS[e.key]; if (!a) return;
+  if (online && online.seat==='past' && 'UDLR'.includes(a) && pastViewInfo){
+    e.preventDefault();
+    const [dx,dy] = DIRS[a];
+    pastCam.follow = false; pastCam.cx += dx*2; pastCam.cy += dy*2; drawPast();
+    return;
+  }
+  if (online && online.seat==='past' && a==='W'){ e.preventDefault(); followHero(); return; }
   if (!canMove()) return;
   e.preventDefault(); act(a);
 });
@@ -2336,7 +3173,7 @@ function cleanName(n){ return String(n || '').replace(/\s+/g,' ').trim().slice(0
    One black frame with a blue border hosts every pre-game screen:
    'name' (nickname), 'lobby' (waiting room), 'seats' (Who are you...). */
 const SEATS = {
-  past:{role:'Sees the whole map, a few turns too late.', words:['was','did']},
+  past:{role:'Sees everywhere the hero has been, a few turns late.', words:['was','did']},
   present:{role:'Moves the hero. Sees one step around.', words:['is','am']},
   future:{role:'Knows what is coming. Never sees the map.', words:['will','shall']}
 };
@@ -2409,7 +3246,7 @@ function showMenu(){
     '<button type="button" class="cine-btn ghost" id="menuLocal">Play on one screen</button>' +
     '<button type="button" class="linkish" id="menuHowBtn" aria-expanded="'+menuHow+'">'+(menuHow ? 'Hide how to play' : 'How to play')+'</button>' +
     '<div class="howto-box" id="menuHow"'+(menuHow ? '' : ' hidden')+'>' +
-      '<div><h3>Past</h3><p>Sees the whole map with room names, but a few turns late. Knows where things are, not when.</p></div>' +
+      '<div><h3>Past</h3><p>Can look back over everywhere the hero has seen, with room names, a few turns late. Unexplored places stay dark.</p></div>' +
       '<div><h3>Present</h3><p>The only one who can move. Sees one step around, right now.</p></div>' +
       '<div><h3>Future</h3><p>Knows when doors open and hazards fire. Keeps a journal of photos to dive into. Never sees the map.</p></div>' +
       '<div><h3>House rule</h3><p>Speak only in your own tense. Slip up and Present waits a turn.</p></div>' +
@@ -2439,10 +3276,10 @@ function buildStages(){
           '<canvas data-thumb="'+i+'" aria-hidden="true"></canvas>' +
           '<span class="tcode">'+L.code+(cleared.has(L.id) ? ' <span class="ok">✓ cleared</span>' : '')+'</span>' +
           '<span class="tname">'+L.name+'</span>' +
-          '<span class="tmeta">'+L.doom+' turns'+(L.photos.length ? ' · '+L.photos.length+' photos' : '')+(L.guards.length ? ' · '+L.guards.length+' guard'+(L.guards.length>1?'s':'') : '')+'</span>' +
+          '<span class="tmeta">'+(L.zones.length ? L.zones.length+' sections · ' : '')+L.W+'×'+L.H+' · '+L.doom+' turns'+(L.photos.length ? ' · '+L.photos.length+' photos' : '')+(L.guards.length ? ' · '+L.guards.length+' guard'+(L.guards.length>1?'s':'') : '')+'</span>' +
         '</button>').join('') +
       '</div></section>').join('');
-  document.querySelectorAll('canvas[data-thumb]').forEach(cv => drawThumb(cv, LEVELS[+cv.dataset.thumb], 6));
+  document.querySelectorAll('canvas[data-thumb]').forEach(cv => drawThumb(cv, LEVELS[+cv.dataset.thumb], 240));
 }
 function renderStageFoot(){
   const L = LEVELS[stageSel];
@@ -2698,7 +3535,7 @@ function applyState(st, fresh){
     o.run = r.run|0;
     pastDelay = r.delay|0 || 2;
     moves = r.moves || ''; dives = r.dives || '';
-    if (lvlChanged){ levelIdx = r.level|0; LV = LEVELS[levelIdx]; buildLevelUI(); }
+    if (lvlChanged){ levelIdx = r.level|0; LV = LEVELS[levelIdx]; pastCam.follow = true; buildLevelUI(); }
     else if (runChanged) buildJournal();
     if (lvlChanged || runChanged) endDismissed = false;
     if (changed && o.entered) render();
