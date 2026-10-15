@@ -125,6 +125,19 @@ button{font:inherit;color:inherit}
 .seats.single .page .hand.small,.seats.single .page .note-text{font-size:20px}
 .seats.single .present-wrap{max-width:none;margin:0}
 @media (max-width:860px){
+  .bar{padding:6px 10px;gap:6px 10px}
+  .logo{font-size:15px}
+  .bar .btn,.bar .seg button{font-size:10.5px;padding:5px 7px}
+  .bar .chip{font-size:11px;padding:1px 6px}
+  .seat-head .tense,.seat-head .seat-rule{display:none}
+  .seats{padding:8px 10px 12px}
+  .seats.single .view{height:auto}
+  .present-side .hud{order:1}
+  .present-side .dpad{order:2}
+  .present-side .mirror-btn{order:3}
+  .present-side .msg{order:4}
+  .present-side .duo-note{order:5}
+  .present-side .hint,.present-side .locked-note{order:6}
   html,body{height:auto}
   .game{height:auto;min-height:100%}
   .seats,.seats.single{grid-template-columns:minmax(0,1fr)}
@@ -215,6 +228,7 @@ button{font:inherit;color:inherit}
 .canvas-wrap canvas{display:block;image-rendering:pixelated;max-width:100%}
 #pastCanvas{filter:sepia(.5) saturate(.72) brightness(.96);cursor:grab;touch-action:none}
 #pastCanvas.dragging{cursor:grabbing}
+.duo-note{margin:0;border-left:3px solid var(--present);padding:6px 10px;background:var(--bg);font-size:13.5px;color:var(--muted)}
 .minimap-box{display:flex;flex-direction:column;gap:6px}
 .mini-head{display:flex;align-items:center;justify-content:space-between;gap:8px;flex-wrap:wrap}
 .mini-head .btn{font-size:11px;padding:5px 9px;border-color:var(--past);color:var(--past)}
@@ -483,6 +497,7 @@ button{font:inherit;color:inherit}
             <span class="keychip" id="keyChip">No key</span>
             <span class="keychip shard" id="shardChip" hidden>Shards 0</span>
           </div>
+          <p class="seat-tip duo-note" id="duoNote" hidden>Two-player mode: nobody is Past, so you see four tiles around you and remember where you have been.</p>
           <p class="msg" id="presentMsg" aria-live="polite"></p>
           <div class="dpad" id="dpad">
             <button type="button" class="btn up" data-move="U" aria-label="Move up">▲</button>
@@ -2672,7 +2687,10 @@ function showBrief(){
   const seat = online ? online.seat : (filter!=='all' ? filter : null);
   const tip = $('briefSeat');
   tip.hidden = !seat;
-  if (seat){ tip.innerHTML = SEAT_TIPS[seat]; tip.style.borderLeftColor = 'var(--'+seat+')'; }
+  if (seat){
+    tip.innerHTML = SEAT_TIPS[seat] + (seat==='present' && isDuo() ? ' Nobody is playing Past, so you can see four tiles around you and remember everywhere you have been.' : '');
+    tip.style.borderLeftColor = 'var(--'+seat+')';
+  }
   $('briefOverlay').hidden = false;
   setTimeout(() => $('briefOk').focus({preventScroll:true}), 50);
 }
@@ -2800,14 +2818,19 @@ $('pgPrev').addEventListener('click', () => flip(-1));
 $('book').addEventListener('click', e => { const b = e.target.closest('[data-dive]'); if (b && !b.disabled) dive(+b.dataset.dive); });
 
 /* ===== Past's explorable map ===== */
+/* Two players: when nobody holds the Past seat online, Present gets Past's wide view. */
+const presentCam = {cx:0, cy:0, follow:true};
+function isDuo(){ return !!online && !!online.room && online.room.phase==='started' && !holderOf('past'); }
 /* Past sees a circle this many tiles around every spot the hero has stood (Present sees 1). */
 const PAST_SIGHT = 4;
 const pastCam = {cx:0, cy:0, follow:true};
 let pastCache = null, pastViewInfo = null, miniScale = 2;
-let exploredMemo = {key:'', set:null};
-function exploredUpTo(pi){
+const exploredMemos = {};
+function exploredUpTo(pi, slot){
+  slot = slot || 'past';
+  const memo = exploredMemos[slot] || {key:'', set:null};
   const key = levelIdx+'|'+moves+'|'+dives+'|'+pi;
-  if (exploredMemo.key===key) return exploredMemo.set;
+  if (memo.key===key) return memo.set;
   const set = new Set();
   const R = PAST_SIGHT, R2 = (R+0.5)*(R+0.5);
   let lx = null, ly = null;
@@ -2817,7 +2840,7 @@ function exploredUpTo(pi){
     lx = s.x; ly = s.y;
     for (let dy=-R; dy<=R; dy++) for (let dx=-R; dx<=R; dx++) if (dx*dx+dy*dy <= R2) set.add(K(s.x+dx, s.y+dy));
   }
-  exploredMemo = {key, set};
+  exploredMemos[slot] = {key, set};
   return set;
 }
 function trailUpTo(pi){
@@ -2918,7 +2941,16 @@ function render(){
   kc.classList.toggle('has', cur.key || cur.keys.length>0);
   const sc = $('shardChip'); sc.textContent = 'Shards '+cur.shards; sc.classList.toggle('has', cur.shards>0);
   $('presentMsg').innerHTML = (cur.msg ? cur.msg+' ' : '') + '<span class="floor">'+underText(cur)+'</span>';
-  drawLocalView($('presentCanvas'), $('presentWrap'), cur, fh ? 0 : 380, fh);
+  // Two-player mode: with nobody in the Past seat, Present sees as far as Past would, live
+  const duo = isDuo();
+  $('presentCanvas').classList.toggle('duo', duo);
+  document.querySelector('.seat-present .seat-rule').textContent = duo ? 'Moves the hero. Sees four tiles around, right now.' : 'Moves the hero. Sees one step around, right now.';
+  $('duoNote').hidden = !duo;
+  if (duo){
+    const last = states.length-1;
+    presentCam.cx = cur.x+0.5; presentCam.cy = cur.y+0.5;
+    drawPastView($('presentCanvas'), $('presentWrap'), cur, exploredUpTo(last, 'present'), trailUpTo(last), presentCam, fh);
+  } else drawLocalView($('presentCanvas'), $('presentWrap'), cur, fh ? 0 : 380, fh);
   const allow = canMove();
   document.querySelectorAll('#dpad button').forEach(b => { b.disabled = !allow; });
   $('mirrorBtn').disabled = !allow || cur.shards<=0;
@@ -3604,7 +3636,7 @@ function drawLobby(){
   const foot = stageLine + inviteHTML() +
     (isHost
       ? '<div class="menu-row" style="width:auto"><button type="button" class="cine-btn ghost" id="cineStage">Change stage</button><button type="button" class="cine-btn" id="cineStart">Start game · '+n+' player'+(n===1?'':'s')+'</button></div>' +
-        '<p class="cine-hint">'+(n<3 ? 'TimeLinked plays best with three. You can start with fewer to try it out.' : 'Everyone is here.')+'</p>'
+        '<p class="cine-hint">'+(n<3 ? (n===2 ? 'Two players: take Present and Future and leave Past empty. Present then sees as far as Past would.' : 'TimeLinked plays best with three. Two works too: leave Past empty and Present sees further.') : 'Everyone is here.')+'</p>'
       : '<p class="cine-hint">Waiting for '+esc((o.players.find(p => p.client===host)||{}).name || 'the host')+' to start…</p>') +
     '<button type="button" class="linkish" id="cineLeave">Leave room</button>';
   const f = $('cineFoot');
@@ -3636,6 +3668,7 @@ function drawSeats(){
     } else {
       const waiting = o.players.filter(p => p.alive && !p.seat).map(p => esc(p.name));
       status = waiting.length ? 'Waiting for '+listJoin(waiting)+' to pick…' : 'Here we go…';
+      if (!holderOf('past') && o.players.filter(p => p.alive).length===2) status += ' Past stays empty, so Present will see further.';
     }
   }
   const foot = '<p class="cine-status" aria-live="polite">'+status+'</p>' +
